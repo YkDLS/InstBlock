@@ -1,5 +1,7 @@
-package com.example.instagramblocker
+package com.example.instagramblocker.data
 
+import com.example.instagramblocker.domain.BlockPolicy
+import com.example.instagramblocker.domain.BlockState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

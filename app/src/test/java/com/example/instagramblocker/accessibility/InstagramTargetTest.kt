@@ -1,6 +1,5 @@
-package com.example.instagramblocker
+package com.example.instagramblocker.accessibility
 
-import com.example.instagramblocker.accessibility.InstagramTarget
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
