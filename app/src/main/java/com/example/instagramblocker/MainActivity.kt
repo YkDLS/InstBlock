@@ -43,9 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.example.instagramblocker.accessibility.InstagramBlockService
 import com.example.instagramblocker.accessibility.ServiceConnectionState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.util.Locale
 
@@ -57,13 +61,21 @@ private val AppColors = lightColorScheme(
     surface = Color.White,
 )
 
+private data class UpdateUiState(
+    val checking: Boolean = false,
+    val message: String? = null,
+    val available: UpdateInfo? = null,
+)
+
 class MainActivity : ComponentActivity() {
     private val store by lazy { BlockStore(this) }
     private val controlStore by lazy { BlockControlStore(this) }
+    private val updateChecker by lazy { UpdateChecker(this) }
     private var state by mutableStateOf(BlockState(0L, 0))
     private var serviceEnabled by mutableStateOf(false)
     private var blockingEnabled by mutableStateOf(true)
     private var remainingMs by mutableLongStateOf(0L)
+    private var updateState by mutableStateOf(UpdateUiState())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,6 +90,9 @@ class MainActivity : ComponentActivity() {
                         onOpenSettings = { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
                         onRefresh = ::refresh,
                         onToggleBlocking = ::toggleBlocking,
+                        updateState = updateState,
+                        onCheckUpdates = ::checkForUpdates,
+                        onInstallUpdate = ::installUpdate,
                     )
                 }
             }
@@ -115,6 +130,35 @@ class MainActivity : ComponentActivity() {
         }
         refresh()
     }
+
+    private fun checkForUpdates() {
+        updateState = UpdateUiState(checking = true, message = "Verificando atualizações…")
+        lifecycleScope.launch {
+            updateState = try {
+                val update = withContext(Dispatchers.IO) { updateChecker.findAvailableUpdate() }
+                if (update == null) {
+                    UpdateUiState(message = "Você já está usando a versão mais recente.")
+                } else {
+                    UpdateUiState(message = "Nova versão ${update.version} disponível.", available = update)
+                }
+            } catch (error: Exception) {
+                UpdateUiState(message = "Não foi possível verificar agora. Tente novamente mais tarde.")
+            }
+        }
+    }
+
+    private fun installUpdate(update: UpdateInfo) {
+        updateState = UpdateUiState(checking = true, message = "Baixando a versão ${update.version}…")
+        lifecycleScope.launch {
+            updateState = try {
+                val apk = withContext(Dispatchers.IO) { updateChecker.download(update) }
+                updateChecker.openInstaller(apk)
+                UpdateUiState(message = "Confirme a instalação na janela do Android.")
+            } catch (error: Exception) {
+                UpdateUiState(message = "Não foi possível baixar a atualização.")
+            }
+        }
+    }
 }
 
 @Composable
@@ -126,6 +170,9 @@ private fun BlockScreen(
     onOpenSettings: () -> Unit,
     onRefresh: () -> Unit,
     onToggleBlocking: () -> Unit,
+    updateState: UpdateUiState,
+    onCheckUpdates: () -> Unit,
+    onInstallUpdate: (UpdateInfo) -> Unit,
 ) {
     val connected by ServiceConnectionState.connected.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -192,6 +239,25 @@ private fun BlockScreen(
                             Text(if (day == todayKey) "Hoje" else day, style = MaterialTheme.typography.bodyLarge)
                             Text("$count tentativas", fontWeight = FontWeight.SemiBold, color = AppColors.primary)
                         }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        Card(colors = CardDefaults.cardColors(containerColor = AppColors.primary.copy(alpha = 0.08f)), shape = RoundedCornerShape(22.dp)) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Atualizações", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                Text(updateState.message ?: "Mantenha o bloqueador atualizado pelo GitHub.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(10.dp))
+                if (updateState.available != null && !updateState.checking) {
+                    Button(onClick = { onInstallUpdate(updateState.available) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+                        Text("Baixar versão ${updateState.available.version}")
+                    }
+                } else {
+                    Button(onClick = onCheckUpdates, enabled = !updateState.checking, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+                        Text(if (updateState.checking) "Verificando…" else "Verificar atualizações")
                     }
                 }
             }

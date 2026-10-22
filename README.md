@@ -6,7 +6,7 @@ O painel exibe o cronômetro, o total de tentativas e o histórico por dia. O bl
 
 ## Privacidade
 
-O aplicativo não usa internet, login ou servidor. O serviço de acessibilidade observa somente o tipo do evento e o nome do pacote da janela ativa. Não lê o conteúdo das telas e só reage ao pacote oficial `com.instagram.android`.
+O aplicativo não usa login nem servidor próprio. A internet é usada somente quando você toca em **Verificar atualizações**, para consultar e baixar uma Release do GitHub. O serviço de acessibilidade observa somente o tipo do evento e o nome do pacote da janela ativa. Não lê o conteúdo das telas e só reage ao pacote oficial `com.instagram.android`.
 
 ## Requisitos
 
@@ -30,7 +30,7 @@ Para usar no aparelho, instale o APK, abra o aplicativo e ative **Bloqueio do In
 
 ## Versionamento
 
-A versão atual é `1.0.0` (`versionCode 1`). Para cada nova versão publicada, incremente o `versionCode` e atualize o `versionName` em `app/build.gradle.kts`.
+A versão atual é `1.0.1` (`versionCode 2`). Para cada nova versão publicada, incremente o `versionCode` e atualize o `versionName` em `app/build.gradle.kts`.
 
 ## Publicação
 
