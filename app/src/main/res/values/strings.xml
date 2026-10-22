@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Bloqueador do Instagram</string>
+    <string name="service_name">Bloqueio do Instagram</string>
+    <string name="service_description">Detecta quando o Instagram é aberto, volta à tela inicial e acrescenta 5 minutos ao bloqueio, até 3 horas.</string>
+    <string name="title">Seu tempo de foco</string>
+    <string name="intro">Cada tentativa de abrir o Instagram acrescenta 5 minutos ao bloqueio, até 3 horas restantes.</string>
+    <string name="remaining_label">Tempo de bloqueio restante</string>
+    <string name="attempts_label">Tentativas registradas: %1$d</string>
+    <string name="service_active">Proteção ativa</string>
+    <string name="service_inactive">Proteção desativada</string>
+    <string name="service_waiting">Serviço ativado; aguardando conexão do Android</string>
+    <string name="enable_explanation">Para detectar a abertura do Instagram, ative “Bloqueio do Instagram” nas configurações de acessibilidade. O app observa apenas a troca de janela, sem ler conteúdo da tela.</string>
+    <string name="open_settings">Abrir configurações de acessibilidade</string>
+    <string name="blocking_enabled">Bloqueio ativo: o Instagram será bloqueado.</string>
+    <string name="blocking_paused">Bloqueio pausado: o Instagram está liberado para o trabalho.</string>
+    <string name="pause_blocking">Pausar bloqueio para trabalhar</string>
+    <string name="resume_blocking">Reativar bloqueio do Instagram</string>
+</resources>
