@@ -1,6 +1,8 @@
-package com.example.instagramblocker
+package com.example.instagramblocker.data
 
 import android.content.Context
+import com.example.instagramblocker.domain.BlockPolicy
+import com.example.instagramblocker.domain.BlockingState
 
 /** Preferência local para pausar o bloqueio sem desligar a acessibilidade do Android. */
 class BlockControlStore(context: Context) {
@@ -49,5 +51,3 @@ class BlockControlStore(context: Context) {
         const val NO_PAUSED_TIME = -1L
     }
 }
-
-data class BlockingState(val enabled: Boolean, val pausedRemainingMs: Long?)

@@ -6,66 +6,28 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.example.instagramblocker.accessibility.InstagramBlockService
-import com.example.instagramblocker.accessibility.ServiceConnectionState
-import kotlinx.coroutines.delay
+import com.example.instagramblocker.data.BlockControlStore
+import com.example.instagramblocker.data.BlockStore
+import com.example.instagramblocker.domain.BlockPolicy
+import com.example.instagramblocker.domain.BlockState
+import com.example.instagramblocker.ui.dashboard.DashboardScreen
+import com.example.instagramblocker.ui.dashboard.UpdateUiState
+import com.example.instagramblocker.ui.theme.AppColors
+import com.example.instagramblocker.ui.theme.InstBlockTheme
+import com.example.instagramblocker.updates.UpdateChecker
+import com.example.instagramblocker.updates.UpdateInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import java.util.Locale
-
-private val AppColors = lightColorScheme(
-    primary = Color(0xFF6555D9),
-    secondary = Color(0xFF00A896),
-    tertiary = Color(0xFFFF8A65),
-    background = Color(0xFFF7F5FF),
-    surface = Color.White,
-)
-
-private data class UpdateUiState(
-    val checking: Boolean = false,
-    val message: String? = null,
-    val available: UpdateInfo? = null,
-)
 
 class MainActivity : ComponentActivity() {
     private val store by lazy { BlockStore(this) }
@@ -80,9 +42,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme(colorScheme = AppColors) {
+            InstBlockTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = AppColors.background) {
-                    BlockScreen(
+                    DashboardScreen(
                         state = state,
                         remainingMs = remainingMs,
                         serviceEnabled = serviceEnabled,
@@ -157,141 +119,6 @@ class MainActivity : ComponentActivity() {
             } catch (error: Exception) {
                 UpdateUiState(message = "Não foi possível baixar a atualização.")
             }
-        }
-    }
-}
-
-@Composable
-private fun BlockScreen(
-    state: BlockState,
-    remainingMs: Long,
-    serviceEnabled: Boolean,
-    blockingEnabled: Boolean,
-    onOpenSettings: () -> Unit,
-    onRefresh: () -> Unit,
-    onToggleBlocking: () -> Unit,
-    updateState: UpdateUiState,
-    onCheckUpdates: () -> Unit,
-    onInstallUpdate: (UpdateInfo) -> Unit,
-) {
-    val connected by ServiceConnectionState.connected.collectAsState()
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            while (true) {
-                onRefresh()
-                delay(1_000L)
-            }
-        }
-    }
-
-    val totalSeconds = (remainingMs + 999L) / 1_000L
-    val timer = String.format(Locale.getDefault(), "%02d:%02d:%02d", totalSeconds / 3_600L, (totalSeconds % 3_600L) / 60L, totalSeconds % 60L)
-    val status = when {
-        !serviceEnabled -> R.string.service_inactive
-        connected -> R.string.service_active
-        else -> R.string.service_waiting
-    }
-    val todayKey = LocalDate.now().toString()
-    val dailyEntries = state.attemptsByDay.entries.sortedByDescending { it.key }.take(7)
-
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 28.dp),
-    ) {
-        Text("Foco leve, feed longe", style = MaterialTheme.typography.labelLarge, color = AppColors.primary)
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.intro), style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(20.dp))
-
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
-            Box(
-                modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF6555D9), Color(0xFF9A7BFF))), RoundedCornerShape(28.dp)).padding(24.dp),
-            ) {
-                Column {
-                    Text(if (blockingEnabled) "Bloqueio ativo" else "Pausa para trabalho", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
-                    Text(timer, color = Color.White, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(4.dp))
-                    Text(if (blockingEnabled) "Cada tentativa soma 5 minutos" else "O tempo está congelado", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            StatCard("Tentativas", state.attempts.toString(), AppColors.tertiary, Modifier.weight(1f))
-            StatCard("Hoje", (state.attemptsByDay[todayKey] ?: 0).toString(), AppColors.secondary, Modifier.weight(1f))
-        }
-
-        Spacer(Modifier.height(18.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(22.dp)) {
-            Column(Modifier.padding(20.dp)) {
-                Text("Tentativas por dia", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(12.dp))
-                if (dailyEntries.isEmpty()) {
-                    Text("Ainda não há tentativas registradas.", style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    dailyEntries.forEach { (day, count) ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(if (day == todayKey) "Hoje" else day, style = MaterialTheme.typography.bodyLarge)
-                            Text("$count tentativas", fontWeight = FontWeight.SemiBold, color = AppColors.primary)
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = AppColors.primary.copy(alpha = 0.08f)), shape = RoundedCornerShape(22.dp)) {
-            Column(Modifier.padding(20.dp)) {
-                Text("Atualizações", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(6.dp))
-                Text(updateState.message ?: "Mantenha o bloqueador atualizado pelo GitHub.", style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(10.dp))
-                if (updateState.available != null && !updateState.checking) {
-                    Button(onClick = { onInstallUpdate(updateState.available) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-                        Text("Baixar versão ${updateState.available.version}")
-                    }
-                } else {
-                    Button(onClick = onCheckUpdates, enabled = !updateState.checking, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-                        Text(if (updateState.checking) "Verificando…" else "Verificar atualizações")
-                    }
-                }
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(status), style = MaterialTheme.typography.titleMedium, color = AppColors.secondary)
-        Spacer(Modifier.height(10.dp))
-        Text(stringResource(if (blockingEnabled) R.string.blocking_enabled else R.string.blocking_paused), style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(10.dp))
-        Button(
-            onClick = onToggleBlocking,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = if (blockingEnabled) AppColors.tertiary else AppColors.secondary),
-        ) {
-            Text(stringResource(if (blockingEnabled) R.string.pause_blocking else R.string.resume_blocking))
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.enable_explanation), style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(12.dp))
-        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Text(stringResource(R.string.open_settings))
-        }
-    }
-}
-
-@Composable
-private fun StatCard(label: String, value: String, color: Color, modifier: Modifier) {
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.12f)), shape = RoundedCornerShape(20.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = color)
-            Spacer(Modifier.height(4.dp))
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
     }
 }

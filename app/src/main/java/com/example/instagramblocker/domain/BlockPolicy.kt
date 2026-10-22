@@ -1,4 +1,4 @@
-package com.example.instagramblocker
+package com.example.instagramblocker.domain
 
 /** A duração começa em zero e cresce em cinco minutos por entrada distinta. */
 object BlockPolicy {
@@ -30,4 +30,3 @@ object BlockPolicy {
         }
     }
 }
-

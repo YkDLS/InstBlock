@@ -5,8 +5,8 @@ import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.example.instagramblocker.BlockedActivity
-import com.example.instagramblocker.BlockStore
-import com.example.instagramblocker.BlockControlStore
+import com.example.instagramblocker.data.BlockControlStore
+import com.example.instagramblocker.data.BlockStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
