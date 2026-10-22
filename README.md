@@ -30,7 +30,7 @@ Para usar no aparelho, instale o APK, abra o aplicativo e ative **Bloqueio do In
 
 ## Versionamento
 
-A versão atual é `1.1.1` (`versionCode 4`). Para cada nova versão publicada, incremente o `versionCode` e atualize o `versionName` em `app/build.gradle.kts`.
+A versão atual é `1.1.2` (`versionCode 5`). Para cada nova versão publicada, incremente o `versionCode` e atualize o `versionName` em `app/build.gradle.kts`.
 
 ## Publicação
 
