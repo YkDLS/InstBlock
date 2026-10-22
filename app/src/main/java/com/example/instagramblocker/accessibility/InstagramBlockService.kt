@@ -37,9 +37,13 @@ class InstagramBlockService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val eventPackage = event.packageName?.toString()
         val isInstagram = InstagramTarget.matches(event.packageName)
         if (!isInstagram) {
-            instagramForeground = false
+            // The block screen belongs to this app and must not unlock the
+            // deduplication guard. A real app or the launcher must take focus
+            // before another Instagram entry counts.
+            if (eventPackage != packageName) instagramForeground = false
             return
         }
         if (!controlStore.isEnabled()) return
