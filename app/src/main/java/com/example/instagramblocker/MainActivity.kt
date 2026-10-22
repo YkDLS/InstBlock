@@ -26,7 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -53,12 +54,14 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.util.Locale
 
-private val AppColors = lightColorScheme(
-    primary = Color(0xFF6555D9),
-    secondary = Color(0xFF00A896),
-    tertiary = Color(0xFFFF8A65),
-    background = Color(0xFFF7F5FF),
-    surface = Color.White,
+private val AppColors = darkColorScheme(
+    primary = Color(0xFF65E7FF),
+    secondary = Color(0xFF63F5B0),
+    tertiary = Color(0xFFB78CFF),
+    background = Color(0xFF07111F),
+    surface = Color(0xFF0D1B2A),
+    onBackground = Color(0xFFE8F7FF),
+    onSurface = Color(0xFFE8F7FF),
 )
 
 private data class UpdateUiState(
@@ -199,7 +202,7 @@ private fun BlockScreen(
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 28.dp),
     ) {
-        Text("Foco leve, feed longe", style = MaterialTheme.typography.labelLarge, color = AppColors.primary)
+        Text("INSTAGRAM_BLOCKER // CONTROL PANEL", style = MaterialTheme.typography.labelLarge, color = AppColors.primary, fontFamily = FontFamily.Monospace)
         Spacer(Modifier.height(6.dp))
         Text(stringResource(R.string.title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
@@ -208,12 +211,12 @@ private fun BlockScreen(
 
         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
             Box(
-                modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF6555D9), Color(0xFF9A7BFF))), RoundedCornerShape(28.dp)).padding(24.dp),
+                modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF102E4A), Color(0xFF442B78))), RoundedCornerShape(28.dp)).padding(24.dp),
             ) {
                 Column {
                     Text(if (blockingEnabled) "Bloqueio ativo" else "Pausa para trabalho", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
-                    Text(timer, color = Color.White, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
+                    Text(timer, color = AppColors.primary, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                     Spacer(Modifier.height(4.dp))
                     Text(if (blockingEnabled) "Cada tentativa soma 5 minutos" else "O tempo está congelado", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
                 }
@@ -227,9 +230,9 @@ private fun BlockScreen(
         }
 
         Spacer(Modifier.height(18.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(22.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1B2A)), shape = RoundedCornerShape(22.dp)) {
             Column(Modifier.padding(20.dp)) {
-                Text("Tentativas por dia", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("// TENTATIVAS POR DIA", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                 Spacer(Modifier.height(12.dp))
                 if (dailyEntries.isEmpty()) {
                     Text("Ainda não há tentativas registradas.", style = MaterialTheme.typography.bodyMedium)
@@ -247,7 +250,7 @@ private fun BlockScreen(
         Spacer(Modifier.height(16.dp))
         Card(colors = CardDefaults.cardColors(containerColor = AppColors.primary.copy(alpha = 0.08f)), shape = RoundedCornerShape(22.dp)) {
             Column(Modifier.padding(20.dp)) {
-                Text("Atualizações", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("// ATUALIZAÇÕES", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                 Spacer(Modifier.height(6.dp))
                 Text(updateState.message ?: "Mantenha o bloqueador atualizado pelo GitHub.", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(10.dp))
@@ -264,7 +267,7 @@ private fun BlockScreen(
         }
 
         Spacer(Modifier.height(16.dp))
-        Text(stringResource(status), style = MaterialTheme.typography.titleMedium, color = AppColors.secondary)
+        Text("STATUS :: ${stringResource(status)}", style = MaterialTheme.typography.titleMedium, color = AppColors.secondary, fontFamily = FontFamily.Monospace)
         Spacer(Modifier.height(10.dp))
         Text(stringResource(if (blockingEnabled) R.string.blocking_enabled else R.string.blocking_paused), style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(10.dp))
