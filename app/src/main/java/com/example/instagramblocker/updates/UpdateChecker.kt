@@ -1,4 +1,4 @@
-package com.example.instagramblocker
+package com.example.instagramblocker.updates
 
 import android.content.Context
 import android.content.Intent
@@ -6,16 +6,11 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.content.FileProvider
-import org.json.JSONObject
+import com.example.instagramblocker.BuildConfig
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-
-data class UpdateInfo(
-    val version: String,
-    val downloadUrl: String,
-    val assetName: String,
-)
+import org.json.JSONObject
 
 class UpdateChecker(private val context: Context) {
     suspend fun findAvailableUpdate(): UpdateInfo? {
@@ -111,7 +106,7 @@ class UpdateChecker(private val context: Context) {
     }
 
     private companion object {
-        const val API_URL = "https://api.github.com/repos/YkDLS/InstagramBlocker/releases/latest"
+        const val API_URL = "https://api.github.com/repos/YkDLS/InstBlock/releases/latest"
         const val APK_MIME = "application/vnd.android.package-archive"
     }
 }

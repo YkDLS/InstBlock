@@ -1,19 +1,9 @@
-package com.example.instagramblocker
+package com.example.instagramblocker.data
 
 import android.content.Context
 import android.content.SharedPreferences
-
-data class BlockState(
-    val deadlineMs: Long,
-    val attempts: Int,
-    val attemptsByDay: Map<String, Int> = emptyMap(),
-)
-
-/** Small persistence boundary so the store behavior can be tested without Android. */
-interface BlockStatePersistence {
-    fun read(): BlockState
-    fun write(state: BlockState): Boolean
-}
+import com.example.instagramblocker.domain.BlockPolicy
+import com.example.instagramblocker.domain.BlockState
 
 class BlockStore(private val persistence: BlockStatePersistence) {
     constructor(context: Context) : this(

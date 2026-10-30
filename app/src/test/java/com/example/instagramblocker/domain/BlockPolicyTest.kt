@@ -1,4 +1,4 @@
-package com.example.instagramblocker
+package com.example.instagramblocker.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
