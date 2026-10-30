@@ -94,3 +94,7 @@ O painel distingue três estados: serviço desativado, habilitado mas ainda sem 
 | Primeira abertura do Instagram | Volta à tela inicial, uma tentativa, cerca de 5 minutos restantes. |
 | Segunda abertura após voltar à tela inicial | Duas tentativas e 5 minutos adicionados ao restante. |
 | Muitos eventos da mesma janela | Uma única tentativa para aquela entrada. |
+# AtualizaÃ§Ãµes recentes
+
+O serviÃ§o de acessibilidade agora Ã© limitado ao pacote `com.instagram.android`, evitando observaÃ§Ã£o de aplicativos bancÃ¡rios e outros aplicativos do aparelho. O fluxo de atualizaÃ§Ã£o tambÃ©m verifica a permissÃ£o de instalaÃ§Ã£o de APK e abre as configuraÃ§Ãµes do Android quando necessÃ¡rio.
+

@@ -148,6 +148,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun installUpdate(update: UpdateInfo) {
+        if (!updateChecker.canInstallPackages()) {
+            updateState = UpdateUiState(message = "Permita instalaÃ§Ãµes desta fonte para continuar.")
+            updateChecker.openInstallPermissionSettings()
+            return
+        }
         updateState = UpdateUiState(checking = true, message = "Baixando a versão ${update.version}…")
         lifecycleScope.launch {
             updateState = try {
