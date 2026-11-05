@@ -15,6 +15,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.instagramblocker.data.BlockStore
+import com.example.instagramblocker.data.SystemTimer
+import com.example.instagramblocker.domain.BlockPhase
 import com.example.instagramblocker.domain.BlockPolicy
 import com.example.instagramblocker.domain.BlockState
 import com.example.instagramblocker.ui.blocked.BlockedScreen
@@ -34,26 +36,32 @@ class BlockedActivity : ComponentActivity() {
     )
     private val store by lazy { BlockStore(this) }
     private var state by mutableStateOf(BlockState(0L, 0))
-    private var nowMs by mutableLongStateOf(System.currentTimeMillis())
+    private var nowMs by mutableLongStateOf(SystemTimer.elapsedRealtimeMs())
+    private var bootCount = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        bootCount = SystemTimer.bootCount(this)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = goHome()
         })
-        state = store.read()
+        state = store.current(nowMs, bootCount)
         setContent {
             LaunchedEffect(Unit) {
                 while (true) {
-                    nowMs = System.currentTimeMillis()
-                    state = store.read()
+                    nowMs = SystemTimer.elapsedRealtimeMs()
+                    state = store.current(nowMs, bootCount)
+                    if (state.phase != BlockPhase.BLOCKED) {
+                        goHome()
+                        break
+                    }
                     delay(1_000L)
                 }
             }
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     BlockedScreen(
-                        remainingMs = BlockPolicy.remainingMs(nowMs, state.deadlineMs),
+                        remainingMs = BlockPolicy.snapshot(nowMs, state.phase, state.deadlineMs).remainingMs,
                         message = blockMessages[(state.attempts - 1).coerceAtLeast(0) % blockMessages.size],
                         onGoHome = ::goHome,
                     )

@@ -1,0 +1,86 @@
+name: Security audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - name: Unit tests, lint, and APK
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon
+
+      - name: Record dependency tree
+        run: ./gradlew :app:dependencies --configuration debugRuntimeClasspath --no-daemon > app/build/reports/debug-runtime-dependencies.txt
+
+      - name: Verify security-sensitive manifest settings
+        shell: bash
+        run: |
+          manifest="app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml"
+          test -f "$manifest"
+          grep -q 'android:usesCleartextTraffic="false"' "$manifest"
+          grep -q 'android.permission.BIND_ACCESSIBILITY_SERVICE' "$manifest"
+          grep -q 'android:name="androidx.core.content.FileProvider"' "$manifest"
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-security-reports
+          path: |
+            app/build/reports/lint-results-debug.html
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/debug-runtime-dependencies.txt
+          if-no-files-found: warn
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin, javascript-typescript
+
+      - name: Build for CodeQL
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3

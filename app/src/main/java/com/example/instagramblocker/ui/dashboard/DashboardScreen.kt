@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +34,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.instagramblocker.R
 import com.example.instagramblocker.accessibility.ServiceConnectionState
 import com.example.instagramblocker.domain.BlockState
+import com.example.instagramblocker.domain.BlockPhase
 import com.example.instagramblocker.ui.components.StatCard
 import com.example.instagramblocker.ui.theme.AppColors
 import com.example.instagramblocker.updates.UpdateInfo
@@ -47,10 +47,9 @@ fun DashboardScreen(
     state: BlockState,
     remainingMs: Long,
     serviceEnabled: Boolean,
-    blockingEnabled: Boolean,
+    blockPhase: BlockPhase,
     onOpenSettings: () -> Unit,
     onRefresh: () -> Unit,
-    onToggleBlocking: () -> Unit,
     updateState: UpdateUiState,
     onCheckUpdates: () -> Unit,
     onInstallUpdate: (UpdateInfo) -> Unit,
@@ -76,6 +75,16 @@ fun DashboardScreen(
     }
     val todayKey = LocalDate.now().toString()
     val dailyEntries = state.attemptsByDay.entries.sortedByDescending { it.key }.take(7)
+    val phaseTitle = when (blockPhase) {
+        BlockPhase.BLOCKED -> "Bloqueio ativo"
+        BlockPhase.RELEASED -> "Instagram liberado"
+        BlockPhase.READY -> "Proteção pronta"
+    }
+    val phaseDescription = when (blockPhase) {
+        BlockPhase.BLOCKED -> "Cada tentativa soma 5 minutos"
+        BlockPhase.RELEASED -> "Janela de 10 minutos corridos"
+        BlockPhase.READY -> "A próxima tentativa inicia o bloqueio"
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 28.dp),
@@ -92,11 +101,11 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF6555D9), Color(0xFF9A7BFF))), RoundedCornerShape(28.dp)).padding(24.dp),
             ) {
                 Column {
-                    Text(if (blockingEnabled) "Bloqueio ativo" else "Pausa para trabalho", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.titleMedium)
+                    Text(phaseTitle, color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
                     Text(timer, color = Color.White, style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(4.dp))
-                    Text(if (blockingEnabled) "Cada tentativa soma 5 minutos" else "O tempo está congelado", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
+                    Text(phaseDescription, color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -147,16 +156,9 @@ fun DashboardScreen(
         Spacer(Modifier.height(16.dp))
         Text(stringResource(status), style = MaterialTheme.typography.titleMedium, color = AppColors.secondary)
         Spacer(Modifier.height(10.dp))
-        Text(stringResource(if (blockingEnabled) R.string.blocking_enabled else R.string.blocking_paused), style = MaterialTheme.typography.bodyMedium)
-        Spacer(Modifier.height(10.dp))
-        Button(
-            onClick = onToggleBlocking,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = if (blockingEnabled) AppColors.tertiary else AppColors.secondary),
-        ) {
-            Text(stringResource(if (blockingEnabled) R.string.pause_blocking else R.string.resume_blocking))
-        }
+        Text(stringResource(R.string.blocking_cycle), style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.timer_integrity), style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.enable_explanation), style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(12.dp))

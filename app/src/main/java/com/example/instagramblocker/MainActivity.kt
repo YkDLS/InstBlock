@@ -2,6 +2,9 @@ package com.example.instagramblocker
 
 import android.content.ComponentName
 import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -15,8 +18,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.example.instagramblocker.accessibility.InstagramBlockService
-import com.example.instagramblocker.data.BlockControlStore
 import com.example.instagramblocker.data.BlockStore
+import com.example.instagramblocker.data.SystemTimer
+import com.example.instagramblocker.domain.BlockPhase
 import com.example.instagramblocker.domain.BlockPolicy
 import com.example.instagramblocker.domain.BlockState
 import com.example.instagramblocker.ui.dashboard.DashboardScreen
@@ -31,16 +35,16 @@ import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     private val store by lazy { BlockStore(this) }
-    private val controlStore by lazy { BlockControlStore(this) }
     private val updateChecker by lazy { UpdateChecker(this) }
     private var state by mutableStateOf(BlockState(0L, 0))
     private var serviceEnabled by mutableStateOf(false)
-    private var blockingEnabled by mutableStateOf(true)
+    private var blockPhase by mutableStateOf(BlockPhase.READY)
     private var remainingMs by mutableLongStateOf(0L)
     private var updateState by mutableStateOf(UpdateUiState())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestNotificationPermission()
         setContent {
             InstBlockTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = AppColors.background) {
@@ -48,10 +52,9 @@ class MainActivity : ComponentActivity() {
                         state = state,
                         remainingMs = remainingMs,
                         serviceEnabled = serviceEnabled,
-                        blockingEnabled = blockingEnabled,
+                        blockPhase = blockPhase,
                         onOpenSettings = { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
                         onRefresh = ::refresh,
-                        onToggleBlocking = ::toggleBlocking,
                         updateState = updateState,
                         onCheckUpdates = ::checkForUpdates,
                         onInstallUpdate = ::installUpdate,
@@ -67,11 +70,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun refresh() {
-        val nowMs = System.currentTimeMillis()
-        state = store.read()
-        val control = controlStore.read()
-        blockingEnabled = control.enabled
-        remainingMs = control.pausedRemainingMs ?: BlockPolicy.remainingMs(nowMs, state.deadlineMs)
+        val nowMs = SystemTimer.elapsedRealtimeMs()
+        state = store.current(nowMs, SystemTimer.bootCount(this))
+        val snapshot = BlockPolicy.snapshot(nowMs, state.phase, state.deadlineMs)
+        blockPhase = snapshot.phase
+        remainingMs = snapshot.remainingMs
 
         val component = ComponentName(this, InstagramBlockService::class.java)
         val names = setOf(component.flattenToString(), component.flattenToShortString())
@@ -82,15 +85,12 @@ class MainActivity : ComponentActivity() {
         serviceEnabled = enabledServices.split(':').any { it in names }
     }
 
-    private fun toggleBlocking() {
-        val nowMs = System.currentTimeMillis()
-        if (blockingEnabled) {
-            controlStore.pause(nowMs, state.deadlineMs)
-        } else {
-            val newDeadline = controlStore.resume(nowMs)
-            store.restoreDeadline(newDeadline)
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
         }
-        refresh()
     }
 
     private fun checkForUpdates() {
@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
 
     private fun installUpdate(update: UpdateInfo) {
         if (!updateChecker.canInstallPackages()) {
-            updateState = UpdateUiState(message = "Permita instalaÃ§Ãµes desta fonte para continuar.")
+            updateState = UpdateUiState(message = "Permita instalações desta fonte para continuar.")
             updateChecker.openInstallPermissionSettings()
             return
         }
@@ -125,5 +125,9 @@ class MainActivity : ComponentActivity() {
                 UpdateUiState(message = "Não foi possível baixar a atualização.")
             }
         }
+    }
+
+    private companion object {
+        const val NOTIFICATION_PERMISSION_REQUEST = 100
     }
 }

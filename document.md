@@ -1,100 +1,114 @@
-# Documentação do projeto — Bloqueador do Instagram
+# Documentação funcional — InstBlock v1.2.0
+
+Este documento resume o comportamento do aplicativo para produto, desenvolvimento e validação. A descrição técnica detalhada está em [docs/architecture.md](docs/architecture.md), e o roteiro de testes no aparelho está em [docs/testing.md](docs/testing.md).
 
 ## 1. Objetivo
 
-Aplicativo Android nativo que detecta a abertura do aplicativo oficial do Instagram (\`com.instagram.android\`), registra a tentativa e envia o usuário à tela inicial. A primeira tentativa cria uma penalidade de 5 minutos. Cada nova entrada distinta acrescenta 5 minutos ao tempo que ainda resta, com limite de 3 horas restantes.
+O InstBlock é um aplicativo Android nativo de autocontrole. Ele detecta a abertura do aplicativo oficial do Instagram (`com.instagram.android`), registra a tentativa e apresenta uma tela de bloqueio. Não bloqueia o Instagram no navegador nem outros pacotes.
 
-O cronômetro mostra a penalidade acumulada. Ele \*\*não\*\* libera o Instagram quando chega a zero: enquanto o serviço estiver ativo, a próxima abertura também será dispensada e iniciará uma nova penalidade de 5 minutos.
+O serviço de acessibilidade recebe somente eventos de mudança de janela do pacote oficial do Instagram e não solicita leitura do conteúdo da tela. Alguns bancos, porém, recusam qualquer serviço de acessibilidade de terceiros apenas por estar habilitado; nesses casos, o usuário precisa desativar o serviço antes de usar o banco e reativá-lo depois.
 
-## 2. Comportamento esperado
+## 2. Ciclo automático
 
-1. Na primeira abertura do bloqueador, o painel mostra \`00:00:00\` e zero tentativas.
-2. O usuário ativa \*\*Bloqueio do Instagram\*\* nas configurações de acessibilidade do Android.
-3. Ao abrir o Instagram, o serviço salva uma tentativa e um novo prazo, depois aciona a volta à tela inicial.
-4. Ao sair do Instagram e tentar entrar novamente, o serviço acrescenta 5 minutos ao tempo restante.
-5. Eventos repetidos enquanto a janela do Instagram continua ativa não acrescentam tempo. Outra janela precisa ficar ativa antes de uma nova entrada ser considerada uma nova tentativa.
-6. O tempo restante é limitado a 3 horas, mesmo após muitas tentativas.
-7. O prazo e o número total de tentativas persistem após o encerramento do processo e a reinicialização do aparelho.
+1. A instalação limpa começa em **Proteção pronta**, com cronômetro e contadores zerados.
+2. A primeira entrada no Instagram registra uma tentativa e inicia cinco minutos de bloqueio.
+3. Cada nova entrada bloqueada acrescenta cinco minutos ao tempo restante, até o máximo de três horas.
+4. Eventos recebidos no intervalo de um segundo são tratados como duplicados.
+5. Quando o bloqueio termina, começa uma liberação de dez minutos corridos. Durante esse período, entradas no Instagram não geram novas tentativas.
+6. Ao final da liberação, a proteção volta sozinha. A próxima entrada inicia um novo bloqueio de cinco minutos.
 
-### Regra de tempo
+Não existe botão de pausa manual. A tela de bloqueio volta automaticamente ao launcher quando o período bloqueado termina.
 
-\`novo prazo = agora + mínimo(máximo(prazo anterior − agora, 0) + 5 minutos, 3 horas)\`
+### Regra de acréscimo
 
-Por exemplo, se restam 4 minutos, uma nova tentativa passa a mostrar aproximadamente 9 minutos. Se o prazo já expirou, uma nova tentativa inicia 5 minutos. O limite de 3 horas é aplicado ao \*\*tempo restante\*\*, não ao número de tentativas. O número de tentativas exibido é cumulativo e não é zerado quando o cronômetro chega a zero.
+```text
+restante = máximo(prazo monotônico − agora monotônico, 0)
+novo prazo = agora monotônico + mínimo(restante + 5 minutos, 3 horas)
+```
 
-## 3. Tecnologias e configuração
+Os contadores total e diário continuam acumulados entre ciclos. O painel mostra o total, as tentativas do dia local e até sete datas com registros.
 
-| Item | Configuração no projeto |
+## 3. Relógio resistente a alterações
+
+O bloqueio usa `SystemClock.elapsedRealtime()`, e não a data ou hora mostrada pelo aparelho. Adiantar ou atrasar o relógio civil não altera a espera.
+
+A fase, o contador de boots e o restante são persistidos em `SharedPreferences`. O serviço cria checkpoints a cada cinco segundos e também tenta salvar no desligamento normal. Depois de reiniciar, reconstrói o prazo com o restante salvo:
+
+- o tempo em que o aparelho ficou desligado não é descontado;
+- um desligamento inesperado pode repetir até aproximadamente cinco segundos;
+- reiniciar nunca reduz a espera.
+
+Estados criados por versões anteriores são migrados uma única vez a partir do prazo antigo.
+
+## 4. Notificações
+
+O canal **Tempo de foco** apresenta:
+
+- uma notificação persistente com o tempo restante durante o bloqueio;
+- a contagem da janela de liberação;
+- um aviso quando o Instagram é liberado;
+- um aviso quando a proteção volta.
+
+Android 13 ou superior exige que o usuário conceda `POST_NOTIFICATIONS`. Negar essa permissão oculta os avisos, mas não desativa a regra de bloqueio.
+
+## 5. Instalação pelo GitHub
+
+1. Abra [Releases](https://github.com/YkDLS/InstBlock/releases) no celular.
+2. Escolha a versão e baixe o arquivo APK anexado — não os arquivos automáticos **Source code**.
+3. Autorize a instalação para o navegador ou gerenciador de arquivos, se o Android solicitar.
+4. Instale e abra o InstBlock.
+5. Permita notificações quando solicitado.
+6. Toque em **Abrir configurações de acessibilidade** e ative **Bloqueio do Instagram**.
+
+Uma atualização preserva dados somente quando usa o mesmo `applicationId` e uma assinatura compatível. Builds debug assinados com chaves diferentes podem exigir a desinstalação da versão anterior; a desinstalação apaga o histórico local.
+
+### Migração da v1.1.2 para a v1.2.0
+
+O APK publicado da v1.1.2 foi assinado com uma chave debug efêmera que não está mais disponível. A v1.2.0, portanto, exige desinstalar a versão anterior e fazer uma instalação limpa, com perda do histórico local. A assinatura da v1.2.0 deve ser preservada para que as próximas atualizações possam ser instaladas sem apagar dados.
+
+## 6. Tecnologias e versão
+
+| Item | Configuração |
 | --- | --- |
+| Versão | `1.2.0` (`versionCode 6`) |
 | Linguagem | Kotlin 2.0.21 |
 | Interface | Jetpack Compose e Material 3 |
-| Plataforma | Android nativo, módulo único \`app\` |
-| Identificador do app | \`com.example.instagramblocker\` |
-| Android mínimo | API 26 |
-| \`compileSdk\` / \`targetSdk\` | API 35 / API 35 |
+| Identificador | `com.example.instagramblocker` |
+| Android mínimo | Android 8.0 / API 26 |
+| `compileSdk` / `targetSdk` | 35 / 35 |
 | Android Gradle Plugin | 8.7.3 |
-| Gradle previsto | 8.9 |
+| Gradle Wrapper | 8.9 |
 | Java | 17 |
-| Armazenamento | \`SharedPreferences\` local |
-| Detecção | \`AccessibilityService\` com eventos de mudança de janela |
+| Persistência | `SharedPreferences` local |
+| Detecção | `AccessibilityService` restrito ao Instagram |
 
-Não há servidor, conta de usuário, acesso à internet ou coleta do conteúdo das telas. O serviço lê apenas o tipo do evento e o nome do pacote da janela ativa.
+## 7. Compilar e verificar
 
-## 4. Estrutura do código
+O repositório já contém o Gradle Wrapper. Com JDK 17 e Android SDK 35 configurados, execute:
 
-| Arquivo | Responsabilidade |
-| --- | --- |
-| \`app/src/main/java/com/example/instagramblocker/MainActivity.kt\` | Tela, cronômetro, estado do serviço e acesso às configurações de acessibilidade. |
-| \`app/src/main/java/com/example/instagramblocker/BlockPolicy.kt\` | Cálculo puro do novo prazo e do tempo restante. |
-| \`app/src/main/java/com/example/instagramblocker/BlockStore.kt\` | Leitura e gravação local do prazo e do contador. |
-| \`app/src/main/java/com/example/instagramblocker/accessibility/InstagramBlockService.kt\` | Detecção de entradas no Instagram e retorno à tela inicial. |
-| \`app/src/main/java/com/example/instagramblocker/accessibility/ServiceConnectionState.kt\` | Informa à tela se o serviço está conectado no processo atual. |
-| \`app/src/main/AndroidManifest.xml\` | Declara a Activity e o serviço protegido por \`BIND\_ACCESSIBILITY\_SERVICE\`. |
-| \`app/src/main/res/xml/accessibility\_service\_config.xml\` | Limita o serviço a eventos de mudança de janela, sem leitura de conteúdo. |
-| \`app/src/main/res/values/strings.xml\` | Textos da interface em português. |
-| \`app/src/test/java/com/example/instagramblocker/BlockPolicyTest.kt\` | Testes locais da primeira tentativa, soma, limite e expiração. |
+```powershell
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon
+```
 
-### Fluxo interno
+Em Linux ou macOS:
 
-\`\`\`text
-Instagram entra em primeiro plano
-  → AccessibilityService recebe TYPE\_WINDOW\_STATE\_CHANGED
-  → verifica o pacote com.instagram.android
-  → ignora repetição da mesma entrada
-  → BlockStore grava o novo prazo e o contador
-  → serviço executa a ação global HOME
-  → MainActivity lê o estado salvo e atualiza o painel
-\`\`\`
+```bash
+./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon
+```
 
-A gravação é feita em uma tarefa de I/O antes de mandar o usuário à tela inicial. Se a gravação falhar, o serviço não considera a tentativa concluída. Se a ação global HOME falhar, ele tenta abrir a tela inicial por uma \`Intent\`.
+O APK fica em `app/build/outputs/apk/debug/app-debug.apk`. Não versione APKs, keystores, tokens ou `local.properties`.
 
-## 5. Preparar e executar
+## 8. Emulador e aparelho
 
-1. Extraia o projeto e abra no Visual Studio Code ou Android Studio a pasta que contém \`settings.gradle.kts\`.
-2. Instale/configure JDK 17 ou superior e Android SDK Platform 35. No VS Code, o SDK precisa ser instalado separadamente; o editor não o fornece.
-3. Instale Gradle 8.9. O projeto contém \`gradle/wrapper/gradle-wrapper.properties\`, mas ainda não contém os scripts nem o arquivo binário do Gradle Wrapper. Gere-os com \`gradle wrapper --gradle-version 8.9\` na raiz do projeto.
-4. Compile e execute os testes locais:
+Para instalar no dispositivo reconhecido pelo ADB:
 
-   \`\`\`bash
-   ./gradlew :app:assembleDebug :app:testDebugUnitTest
-   \`\`\`
+```powershell
+adb devices -l
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
 
-   No Windows, use \`gradlew.bat\` após gerar o wrapper.
+Como configuração de referência, crie no Device Manager do Android Studio um Pixel 7 x86_64 com Android 15 / API 35. Prefira uma imagem com Google Play quando precisar instalar o Instagram oficial. Imagens sem Play Store podem validar instalação, telas, persistência e notificações, mas não substituem o teste do bloqueio no pacote real.
 
-5. Instale \`app/build/outputs/apk/debug/app-debug.apk\` em um aparelho ou emulador Android.
-6. Abra o bloqueador, toque em \*\*Abrir configurações de acessibilidade\*\* e ative \*\*Bloqueio do Instagram\*\*. Essa ativação depende do usuário; o aplicativo não pode fazê-la automaticamente.
+## 9. Atualizações dentro do aplicativo
 
-O painel distingue três estados: serviço desativado, habilitado mas ainda sem conexão com o processo e conectado. O tempo restante é atualizado aproximadamente a cada segundo enquanto a tela está aberta.
-
-## 6. Verificação recomendada no dispositivo
-
-| Cenário | Resultado esperado |
-| --- | --- |
-| Antes de qualquer tentativa | Cronômetro \`00:00:00\`, zero tentativas. |
-| Primeira abertura do Instagram | Volta à tela inicial, uma tentativa, cerca de 5 minutos restantes. |
-| Segunda abertura após voltar à tela inicial | Duas tentativas e 5 minutos adicionados ao restante. |
-| Muitos eventos da mesma janela | Uma única tentativa para aquela entrada. |
-# AtualizaÃ§Ãµes recentes
-
-O serviÃ§o de acessibilidade agora Ã© limitado ao pacote `com.instagram.android`, evitando observaÃ§Ã£o de aplicativos bancÃ¡rios e outros aplicativos do aparelho. O fluxo de atualizaÃ§Ã£o tambÃ©m verifica a permissÃ£o de instalaÃ§Ã£o de APK e abre as configuraÃ§Ãµes do Android quando necessÃ¡rio.
-
+Quando o usuário toca em **Verificar atualizações**, o aplicativo consulta a Release mais recente do repositório, seleciona um asset APK válido, baixa-o para o cache e abre o instalador do Android pelo `FileProvider`. A instalação sempre depende da confirmação do usuário e de uma assinatura compatível.
