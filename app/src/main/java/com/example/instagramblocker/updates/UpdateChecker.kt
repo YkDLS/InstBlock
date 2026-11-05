@@ -82,11 +82,9 @@ class UpdateChecker(private val context: Context) {
         context.startActivity(intent)
     }
 
-    fun canInstallPackages(): Boolean = Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
-        context.packageManager.canRequestPackageInstalls()
+    fun canInstallPackages(): Boolean = context.packageManager.canRequestPackageInstalls()
 
     fun openInstallPermissionSettings() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         context.startActivity(
             Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
                 .setData(Uri.parse("package:${context.packageName}"))

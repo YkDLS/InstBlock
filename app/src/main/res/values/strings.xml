@@ -4,8 +4,6 @@
     <string name="service_description">Detecta somente quando o Instagram é aberto, aplica o bloqueio e libera o aplicativo por 10 minutos quando o prazo termina.</string>
     <string name="title">Seu tempo de foco</string>
     <string name="intro">Cada tentativa acrescenta 5 minutos ao bloqueio, até 3 horas. Ao zerar, o Instagram é liberado por 10 minutos corridos.</string>
-    <string name="remaining_label">Tempo de bloqueio restante</string>
-    <string name="attempts_label">Tentativas registradas: %1$d</string>
     <string name="service_active">Proteção ativa</string>
     <string name="service_inactive">Proteção desativada</string>
     <string name="service_waiting">Serviço ativado; aguardando conexão do Android</string>
