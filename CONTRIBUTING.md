@@ -10,7 +10,7 @@ Crie uma branch a partir da `main` atualizada. Exemplos de nomes: `fix/attempt-c
 
 - `domain/`: regras de tempo e modelos sem dependências de Android ou Compose.
 - `data/`: armazenamento local e operações que persistem o estado.
-- `accessibility/`: integração com eventos e ações de acessibilidade do Android.
+- `usage/`: monitoramento de eventos de uso e sobreposição; `accessibility/InstagramTarget.kt` conserva somente a constante do pacote oficial.
 - `notifications/`: canal, avisos do ciclo e restauração da notificação após boot.
 - `updates/`: integração com GitHub Releases e instalação de APK.
 - `ui/`: telas, componentes e tema em Compose.

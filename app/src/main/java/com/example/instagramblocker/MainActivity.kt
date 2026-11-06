@@ -1,12 +1,13 @@
 package com.example.instagramblocker
 
-import android.content.ComponentName
 import android.content.Intent
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.app.AppOpsManager
+import android.os.Process
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
-import com.example.instagramblocker.accessibility.InstagramBlockService
+import com.example.instagramblocker.usage.InstagramMonitor
 import com.example.instagramblocker.data.BlockStore
 import com.example.instagramblocker.data.SystemTimer
 import com.example.instagramblocker.domain.BlockPhase
@@ -37,7 +38,8 @@ class MainActivity : ComponentActivity() {
     private val store by lazy { BlockStore(this) }
     private val updateChecker by lazy { UpdateChecker(this) }
     private var state by mutableStateOf(BlockState(0L, 0))
-    private var serviceEnabled by mutableStateOf(false)
+    private var usageGranted by mutableStateOf(false)
+    private var overlayGranted by mutableStateOf(false)
     private var blockPhase by mutableStateOf(BlockPhase.READY)
     private var remainingMs by mutableLongStateOf(0L)
     private var updateState by mutableStateOf(UpdateUiState())
@@ -51,9 +53,9 @@ class MainActivity : ComponentActivity() {
                     DashboardScreen(
                         state = state,
                         remainingMs = remainingMs,
-                        serviceEnabled = serviceEnabled,
+                        serviceEnabled = usageGranted && overlayGranted,
                         blockPhase = blockPhase,
-                        onOpenSettings = { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+                        onOpenSettings = ::openRequiredSettings,
                         onRefresh = ::refresh,
                         updateState = updateState,
                         onCheckUpdates = ::checkForUpdates,
@@ -67,6 +69,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        syncMonitor()
     }
 
     private fun refresh() {
@@ -76,13 +79,22 @@ class MainActivity : ComponentActivity() {
         blockPhase = snapshot.phase
         remainingMs = snapshot.remainingMs
 
-        val component = ComponentName(this, InstagramBlockService::class.java)
-        val names = setOf(component.flattenToString(), component.flattenToShortString())
-        val enabledServices = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
-        ).orEmpty()
-        serviceEnabled = enabledServices.split(':').any { it in names }
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager
+        usageGranted = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), packageName) == AppOpsManager.MODE_ALLOWED
+        overlayGranted = Settings.canDrawOverlays(this)
+    }
+
+    private fun syncMonitor() {
+        if (usageGranted && overlayGranted) {
+            startForegroundService(Intent(this, InstagramMonitor::class.java))
+        } else {
+            stopService(Intent(this, InstagramMonitor::class.java))
+        }
+    }
+
+    private fun openRequiredSettings() {
+        if (!usageGranted) startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        else if (!overlayGranted) startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).setData(android.net.Uri.parse("package:$packageName")))
     }
 
     private fun requestNotificationPermission() {

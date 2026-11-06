@@ -17,6 +17,16 @@ import java.util.Locale
 class BlockNotificationManager(private val context: Context) {
     private val manager = context.getSystemService(NotificationManager::class.java)
 
+    fun monitoringNotification(): Notification {
+        return NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.app_name))
+            .setContentText("Monitorando a abertura do Instagram")
+            .setOngoing(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
+    }
+
     init {
         manager.createNotificationChannel(
             NotificationChannel(
@@ -99,9 +109,10 @@ class BlockNotificationManager(private val context: Context) {
         )
     }
 
-    private companion object {
+    companion object {
         const val CHANNEL_ID = "block_timer"
         const val STATUS_NOTIFICATION_ID = 1001
         const val EVENT_NOTIFICATION_ID = 1002
+        const val SERVICE_NOTIFICATION_ID = 1003
     }
 }

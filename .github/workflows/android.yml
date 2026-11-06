@@ -26,3 +26,25 @@ jobs:
 
       - name: Run unit tests, assemble debug APK, and lint
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon
+
+  review-gate:
+    name: Review gate — approve or reject
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check migration and documentation
+        shell: bash
+        run: |
+          test -f app/src/main/java/com/example/instagramblocker/usage/InstagramMonitor.kt
+          ! test -f app/src/main/java/com/example/instagramblocker/accessibility/InstagramBlockService.kt
+          ! test -f app/src/main/res/xml/accessibility_service_config.xml
+          grep -q 'android.permission.PACKAGE_USAGE_STATS' app/src/main/AndroidManifest.xml
+          grep -q 'android.permission.SYSTEM_ALERT_WINDOW' app/src/main/AndroidManifest.xml
+          ! grep -q 'BIND_ACCESSIBILITY_SERVICE' app/src/main/AndroidManifest.xml
+          grep -q 'UsageStatsManager' docs/architecture.md
+          grep -q 'Acesso aos dados de uso' README.md
+          echo 'APROVADO AUTOMATICAMENTE: testes, build, lint e revisão estática. Cenários em aparelho aguardam validação manual.'

@@ -43,7 +43,10 @@ jobs:
           manifest="app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml"
           test -f "$manifest"
           grep -q 'android:usesCleartextTraffic="false"' "$manifest"
-          grep -q 'android.permission.BIND_ACCESSIBILITY_SERVICE' "$manifest"
+          grep -q 'android.permission.PACKAGE_USAGE_STATS' "$manifest"
+          grep -q 'android.permission.SYSTEM_ALERT_WINDOW' "$manifest"
+          grep -q 'InstagramMonitor' "$manifest"
+          ! grep -q 'android.permission.BIND_ACCESSIBILITY_SERVICE' "$manifest"
           grep -q 'android:name="androidx.core.content.FileProvider"' "$manifest"
 
       - name: Upload security reports

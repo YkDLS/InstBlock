@@ -1,14 +1,12 @@
-<resources>
+﻿<resources>
     <string name="app_name">Bloqueador do Instagram</string>
-    <string name="service_name">Bloqueio do Instagram</string>
-    <string name="service_description">Detecta somente quando o Instagram é aberto, aplica o bloqueio e libera o aplicativo por 10 minutos quando o prazo termina.</string>
     <string name="title">Seu tempo de foco</string>
     <string name="intro">Cada tentativa acrescenta 5 minutos ao bloqueio, até 3 horas. Ao zerar, o Instagram é liberado por 10 minutos corridos.</string>
     <string name="service_active">Proteção ativa</string>
     <string name="service_inactive">Proteção desativada</string>
-    <string name="service_waiting">Serviço ativado; aguardando conexão do Android</string>
-    <string name="enable_explanation">Para detectar a abertura do Instagram, ative “Bloqueio do Instagram” nas configurações de acessibilidade. O app observa apenas a troca de janela, sem ler conteúdo da tela.</string>
-    <string name="open_settings">Abrir configurações de acessibilidade</string>
+    <string name="enable_explanation">Para funcionar, permita Acesso aos dados de uso e Exibir sobre outros apps. O InstBlock consulta eventos de uso para detectar somente o Instagram e mostra a tela de bloqueio em sobreposição.</string>
+    <string name="open_settings">Configurar próxima permissão necessária</string>
+    <string name="overlay_blocked">Instagram bloqueado. Volte à tela inicial e respeite o tempo de foco.</string>
     <string name="blocking_cycle">O ciclo é automático: bloqueio acumulado, seguido de 10 minutos de acesso. Não há pausa manual.</string>
     <string name="timer_integrity">A proteção volta sozinha. A espera usa o tempo interno do sistema: desligar o celular pausa a contagem, reiniciar nunca a encurta e alterar o relógio não adianta.</string>
 </resources>

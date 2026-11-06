@@ -16,6 +16,9 @@ class TimerReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED -> {
                 val state = store.current(nowMs, bootCount)
                 BlockNotificationManager(context).update(state, nowMs)
+                if (com.example.instagramblocker.usage.UsageAccess.isGranted(context) && android.provider.Settings.canDrawOverlays(context)) {
+                    context.startForegroundService(Intent(context, com.example.instagramblocker.usage.InstagramMonitor::class.java))
+                }
             }
         }
     }
