@@ -1,0 +1,144 @@
+package com.example.instagramblocker.usage
+
+import android.app.Service
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.content.Intent
+import android.os.IBinder
+import android.os.SystemClock
+import android.os.PowerManager
+import android.view.WindowManager
+import android.graphics.PixelFormat
+import android.view.Gravity
+import android.view.View
+import android.widget.TextView
+import com.example.instagramblocker.BlockedActivity
+import com.example.instagramblocker.accessibility.InstagramTarget
+import com.example.instagramblocker.data.BlockStore
+import com.example.instagramblocker.data.SystemTimer
+import com.example.instagramblocker.domain.BlockPhase
+import com.example.instagramblocker.notifications.BlockNotificationManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class InstagramMonitor : Service() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private lateinit var store: BlockStore
+    private lateinit var notifications: BlockNotificationManager
+    private var lastEventTime = 0L
+    private var foregroundPackage: String? = null
+    private var lastBlockedAt = 0L
+    private var bootCount = 0
+    private var previousPhase: BlockPhase? = null
+    private var blockOverlay: View? = null
+    private var overlayManager: WindowManager? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        store = BlockStore(this)
+        notifications = BlockNotificationManager(this)
+        bootCount = SystemTimer.bootCount(this)
+        startForeground(BlockNotificationManager.SERVICE_NOTIFICATION_ID, notifications.monitoringNotification())
+        scope.launch { monitorLoop() }
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+
+    private suspend fun monitorLoop() {
+        val usage = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
+        overlayManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        while (true) {
+            if (UsageAccess.isGranted(this) && android.provider.Settings.canDrawOverlays(this)) {
+                val now = System.currentTimeMillis()
+                val events = usage.queryEvents((now - EVENT_LOOKBACK_MS).coerceAtLeast(0), now)
+                val event = UsageEvents.Event()
+                var newestTime = lastEventTime
+                var newestPackage: String? = null
+                while (events != null && events.hasNextEvent()) {
+                    events.getNextEvent(event)
+                    if (event.eventType in FOREGROUND_EVENTS && event.timeStamp > newestTime) {
+                        newestTime = event.timeStamp
+                        newestPackage = event.packageName
+                    }
+                }
+                if (newestPackage != null) {
+                    val enteredInstagram = newestPackage == InstagramTarget.PACKAGE_NAME && foregroundPackage != InstagramTarget.PACKAGE_NAME
+                    foregroundPackage = newestPackage
+                    lastEventTime = newestTime
+                    if (newestPackage != InstagramTarget.PACKAGE_NAME) removeBlockOverlay()
+                    if (enteredInstagram) {
+                    val elapsed = SystemClock.elapsedRealtime()
+                    val state = store.current(elapsed, bootCount)
+                    if (state.phase != BlockPhase.RELEASED && elapsed - lastBlockedAt >= DEBOUNCE_MS) {
+                        lastBlockedAt = elapsed
+                        val saved = withContext(Dispatchers.IO) { store.recordAttempt(elapsed, bootCount) }
+                        if (saved) {
+                            showBlockOverlay()
+                        }
+                    }
+                    }
+                }
+                if (!(getSystemService(POWER_SERVICE) as PowerManager).isInteractive) removeBlockOverlay()
+            } else {
+                removeBlockOverlay()
+                stopSelf()
+                return
+            }
+            val elapsed = SystemTimer.elapsedRealtimeMs()
+            val state = withContext(Dispatchers.IO) { store.checkpoint(elapsed, bootCount) }
+            notifications.notifyTransition(previousPhase, state.phase)
+            notifications.update(state, elapsed)
+            previousPhase = state.phase
+            if (state.phase != BlockPhase.BLOCKED) removeBlockOverlay()
+            delay(POLL_INTERVAL_MS)
+        }
+    }
+
+    override fun onDestroy() {
+        removeBlockOverlay()
+        scope.cancel()
+        super.onDestroy()
+    }
+
+    private fun showBlockOverlay() {
+        if (!android.provider.Settings.canDrawOverlays(this) || blockOverlay != null) return
+        val view = TextView(this).apply {
+            text = getString(com.example.instagramblocker.R.string.overlay_blocked)
+            textSize = 20f
+            setTextColor(android.graphics.Color.WHITE)
+            setBackgroundColor(android.graphics.Color.rgb(38, 32, 86))
+            gravity = Gravity.CENTER
+            setPadding(40, 40, 40, 40)
+            isClickable = true
+        }
+        try {
+            overlayManager?.addView(view, WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT,
+            ))
+            blockOverlay = view
+        } catch (_: Exception) { }
+    }
+
+    private fun removeBlockOverlay() {
+        blockOverlay?.let { try { overlayManager?.removeView(it) } catch (_: Exception) { } }
+        blockOverlay = null
+    }
+
+    companion object {
+        const val ACTION_START = "com.example.instagramblocker.START_MONITOR"
+        private const val POLL_INTERVAL_MS = 1_000L
+        private const val EVENT_LOOKBACK_MS = 15_000L
+        private const val DEBOUNCE_MS = 1_000L
+        private val FOREGROUND_EVENTS = setOf(UsageEvents.Event.MOVE_TO_FOREGROUND)
+    }
+}

@@ -4,7 +4,7 @@
 
 Execute os três comandos Gradle descritos no [README](../README.md#compilar-e-verificar): `:app:testDebugUnitTest`, `:app:assembleDebug` e `:app:lintDebug`. O GitHub Actions também os executa em pushes e pull requests, mas não publica o APK automaticamente.
 
-Os testes locais cobrem a regra de cinco minutos, o limite de três horas, a liberação de dez minutos, relógio alterado, restauração após reboot, expiração, persistência, falha de gravação e seleção do pacote oficial. Eles não substituem os testes do serviço de acessibilidade no Android.
+Os testes locais cobrem a regra de cinco minutos, o limite de três horas, a liberação de dez minutos, relógio alterado, restauração após reboot, expiração, persistência, falha de gravação e seleção do pacote oficial. Eles não substituem a verificação do monitor em um aparelho Android.
 
 As verificações de segurança automatizadas estão detalhadas em [security-testing.md](security-testing.md): testes unitários da política de atualização, Android Lint, validação do manifesto, inventário de dependências e CodeQL no GitHub Actions.
 
@@ -25,23 +25,23 @@ adb devices -l
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-No Android 13 ou superior, conceda notificações quando solicitado. A ativação do serviço de acessibilidade continua sendo uma decisão explícita do usuário nas configurações do Android.
+No Android 13 ou superior, conceda notificações quando solicitado. Conceda também acesso aos dados de uso e permissão de sobreposição nas configurações do Android.
 
 Registre a versão do Android, o modelo, a versão do app e o commit testado. Os cenários abaixo são um roteiro a executar, não resultados já confirmados.
 
 | Cenário | Resultado esperado |
 | --- | --- |
 | Instalação limpa, antes de qualquer tentativa | Cronômetro zerado e contadores zerados. |
-| Serviço desativado | Painel informa que a acessibilidade está desativada; a abertura do Instagram não é bloqueada pelo InstBlock. |
-| Ativar o serviço e voltar ao painel | O painel reflete a conexão do serviço; pode mostrar espera antes da conexão. |
+| Permissões ausentes | Painel informa que a proteção está desativada; a abertura do Instagram não é bloqueada. |
+| Conceder as duas permissões e voltar ao painel | O painel mostra proteção ativa e o monitor inicia em primeiro plano. |
 | Negar notificações | O bloqueio continua funcionando; apenas cronômetro e avisos do sistema ficam ocultos. |
-| Primeira entrada no Instagram | Abre a tela de bloqueio, registra uma tentativa e aproximadamente cinco minutos. |
+| Primeira entrada no Instagram | Mostra a sobreposição de bloqueio, registra uma tentativa e aproximadamente cinco minutos. |
 | Nova entrada após voltar ao launcher | Registra mais uma tentativa e soma cinco minutos ao tempo restante. |
 | Eventos repetidos da mesma entrada | Não multiplica a contagem para uma única entrada. |
-| Voltar da tela de bloqueio | Retorna à tela inicial do Android. |
+| Sair do Instagram pela navegação do Android | A sobreposição desaparece quando outro app entra em primeiro plano. |
 | Abrir outro aplicativo ou Instagram no navegador | O InstBlock não bloqueia esses pacotes. |
 | Acumular tentativas até o limite | Tempo restante não supera três horas; o contador continua aumentando. |
-| Deixar o cronômetro chegar a zero | A tela de bloqueio fecha e começa uma liberação de dez minutos corridos. |
+| Deixar o cronômetro chegar a zero | A sobreposição fecha e começa uma liberação de dez minutos corridos. |
 | Abrir o Instagram durante a liberação | O acesso é permitido e não registra outra tentativa. |
 | Aguardar dez minutos de liberação | O painel volta ao estado pronto; a próxima entrada inicia cinco minutos de bloqueio. |
 | Alterar a hora do aparelho durante o bloqueio | O tempo restante não diminui nem aumenta por causa da hora civil. |
@@ -56,14 +56,14 @@ Registre a versão do Android, o modelo, a versão do app e o commit testado. Os
 | Verificar atualização sem rede | Exibe falha de consulta sem encerrar o app. |
 | Verificar atualização com uma versão mais nova disponível | Oferece o download; após baixar, abre o instalador, que exige confirmação. |
 | Verificar atualização sem uma versão mais nova | Informa que a versão está atualizada. |
-| Abrir um banco que aceita acessibilidade de terceiros | O InstBlock não recebe eventos desse pacote nem interfere na janela. |
-| Banco recusar qualquer serviço de acessibilidade ativo | Desativar o InstBlock manualmente, usar o banco e reativar depois; não existe exceção controlável pelo app. |
+| Abrir um banco durante o bloqueio | A sobreposição desaparece ao sair do Instagram; o banco deve abrir sem tela do InstBlock sobre ele. |
+| Banco recusar sobreposições ou acesso ao uso | Registrar banco, aparelho, Android e mensagem exata; a política do banco pode exigir retirar a permissão especial. |
 
 ## Compatibilidade de atualização
 
 Atualize uma instalação de teste existente com um APK de assinatura compatível e `versionCode` adequado. Confirme a manutenção do histórico e dos dados de bloqueio. Preferências antigas de pausa deixam de ser usadas. Não desinstale antes desse teste: a desinstalação remove os dados e não demonstra compatibilidade de atualização.
 
-Confira também que o serviço continua disponível nas configurações de acessibilidade, que o estado antigo é migrado para o relógio monotônico e que o download usa o mesmo `FileProvider`. A versão 1.2.0 preserva `applicationId`, caminhos das Activities, serviço e contadores; as novas chaves do timer são adicionadas ao mesmo arquivo `block_state`.
+Confira que as novas permissões foram concedidas, que o estado antigo é migrado para o relógio monotônico e que o download usa o mesmo `FileProvider`. O `applicationId`, os contadores e o arquivo `block_state` permanecem preservados.
 
 Uma atualização real exige um asset mais novo e assinatura compatível. Builds debug produzidos por chaves diferentes não são atualizáveis entre si; esse caso exige desinstalação e perde os dados, portanto não serve como teste de migração.
 

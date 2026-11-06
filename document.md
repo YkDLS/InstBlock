@@ -1,4 +1,4 @@
-# Documentação funcional — InstBlock v1.2.0
+# Documentação funcional — InstBlock v1.3.0
 
 Este documento resume o comportamento do aplicativo para produto, desenvolvimento e validação. A descrição técnica detalhada está em [docs/architecture.md](docs/architecture.md), e o roteiro de testes no aparelho está em [docs/testing.md](docs/testing.md).
 
@@ -6,7 +6,7 @@ Este documento resume o comportamento do aplicativo para produto, desenvolviment
 
 O InstBlock é um aplicativo Android nativo de autocontrole. Ele detecta a abertura do aplicativo oficial do Instagram (`com.instagram.android`), registra a tentativa e apresenta uma tela de bloqueio. Não bloqueia o Instagram no navegador nem outros pacotes.
 
-O serviço de acessibilidade recebe somente eventos de mudança de janela do pacote oficial do Instagram e não solicita leitura do conteúdo da tela. Alguns bancos, porém, recusam qualquer serviço de acessibilidade de terceiros apenas por estar habilitado; nesses casos, o usuário precisa desativar o serviço antes de usar o banco e reativá-lo depois.
+O monitor usa `UsageStatsManager` para detectar a entrada do Instagram oficial e uma sobreposição para bloquear seu uso. Não solicita acessibilidade nem leitura do conteúdo da tela. A compatibilidade com apps bancários que restringem sobreposições precisa ser confirmada no aparelho.
 
 ## 2. Ciclo automático
 
@@ -17,7 +17,7 @@ O serviço de acessibilidade recebe somente eventos de mudança de janela do pac
 5. Quando o bloqueio termina, começa uma liberação de dez minutos corridos. Durante esse período, entradas no Instagram não geram novas tentativas.
 6. Ao final da liberação, a proteção volta sozinha. A próxima entrada inicia um novo bloqueio de cinco minutos.
 
-Não existe botão de pausa manual. A tela de bloqueio volta automaticamente ao launcher quando o período bloqueado termina.
+Não existe botão de pausa manual. A sobreposição é retirada quando o período bloqueado termina ou quando o usuário sai do Instagram pela navegação do Android.
 
 ### Regra de acréscimo
 
@@ -58,7 +58,7 @@ Android 13 ou superior exige que o usuário conceda `POST_NOTIFICATIONS`. Negar 
 3. Autorize a instalação para o navegador ou gerenciador de arquivos, se o Android solicitar.
 4. Instale e abra o InstBlock.
 5. Permita notificações quando solicitado.
-6. Toque em **Abrir configurações de acessibilidade** e ative **Bloqueio do Instagram**.
+6. Toque em **Configurar próxima permissão necessária**, conceda acesso aos dados de uso e permissão para exibir sobre outros apps.
 
 Uma atualização preserva dados somente quando usa o mesmo `applicationId` e uma assinatura compatível. Builds debug assinados com chaves diferentes podem exigir a desinstalação da versão anterior; a desinstalação apaga o histórico local.
 
@@ -70,7 +70,7 @@ O APK publicado da v1.1.2 foi assinado com uma chave debug efêmera que não est
 
 | Item | Configuração |
 | --- | --- |
-| Versão | `1.2.0` (`versionCode 6`) |
+| Versão | `1.3.0` (`versionCode 7`) |
 | Linguagem | Kotlin 2.0.21 |
 | Interface | Jetpack Compose e Material 3 |
 | Identificador | `com.example.instagramblocker` |
@@ -80,7 +80,7 @@ O APK publicado da v1.1.2 foi assinado com uma chave debug efêmera que não est
 | Gradle Wrapper | 8.9 |
 | Java | 17 |
 | Persistência | `SharedPreferences` local |
-| Detecção | `AccessibilityService` restrito ao Instagram |
+| Detecção | `UsageStatsManager` e serviço em primeiro plano |
 
 ## 7. Compilar e verificar
 

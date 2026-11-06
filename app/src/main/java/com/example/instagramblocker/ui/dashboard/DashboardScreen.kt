@@ -20,8 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -32,7 +30,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.instagramblocker.R
-import com.example.instagramblocker.accessibility.ServiceConnectionState
 import com.example.instagramblocker.domain.BlockState
 import com.example.instagramblocker.domain.BlockPhase
 import com.example.instagramblocker.ui.components.StatCard
@@ -54,7 +51,6 @@ fun DashboardScreen(
     onCheckUpdates: () -> Unit,
     onInstallUpdate: (UpdateInfo) -> Unit,
 ) {
-    val connected by ServiceConnectionState.connected.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(lifecycleOwner) {
@@ -70,8 +66,7 @@ fun DashboardScreen(
     val timer = String.format(Locale.getDefault(), "%02d:%02d:%02d", totalSeconds / 3_600L, (totalSeconds % 3_600L) / 60L, totalSeconds % 60L)
     val status = when {
         !serviceEnabled -> R.string.service_inactive
-        connected -> R.string.service_active
-        else -> R.string.service_waiting
+        else -> R.string.service_active
     }
     val todayKey = LocalDate.now().toString()
     val dailyEntries = state.attemptsByDay.entries.sortedByDescending { it.key }.take(7)
@@ -163,7 +158,7 @@ fun DashboardScreen(
         Text(stringResource(R.string.enable_explanation), style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(12.dp))
         Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Text(stringResource(R.string.open_settings))
+            Text(if (!serviceEnabled) stringResource(R.string.open_settings) else "Permissões configuradas")
         }
     }
 }

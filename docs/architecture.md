@@ -4,7 +4,7 @@
 
 Aplicativo Android nativo em Kotlin e Jetpack Compose, organizado em um único módulo `app`. A divisão em pacotes facilita encontrar cada responsabilidade sem introduzir novos módulos ou bibliotecas.
 
-O namespace e o identificador de instalação continuam sendo `com.example.instagramblocker`. As Activities permanecem nesse pacote, e o serviço permanece em `accessibility/`, preservando os componentes declarados no manifesto.
+O namespace e o identificador de instalação continuam sendo `com.example.instagramblocker`. O monitor de uso fica em `usage/` e é um serviço em primeiro plano não exportado.
 
 ## Organização do código
 
@@ -12,19 +12,19 @@ Os caminhos abaixo são relativos a `app/src/main/java/com/example/instagrambloc
 
 | Arquivo ou pacote | Responsabilidade |
 | --- | --- |
-| `MainActivity.kt` | Lê a fase do ciclo, consulta a acessibilidade e inicia ações de atualização. |
-| `BlockedActivity.kt` | Carrega o estado da tela de bloqueio e executa a ação de voltar à tela inicial. |
+| `MainActivity.kt` | Lê a fase do ciclo, consulta as permissões de uso e sobreposição e inicia ações de atualização. |
+| `BlockedActivity.kt` | Componente legado preservado para compatibilidade; o monitor atual usa sobreposição. |
 | `domain/BlockPolicy.kt` | Calcula bloqueio, liberação de dez minutos e tempo restante monotônico, com proteção contra overflow. |
 | `domain/BlockState.kt` | Representa fase, prazo monotônico, boot/checkpoint e contadores. |
 | `data/BlockStore.kt` | Registra tentativas e usa uma implementação privada de persistência em `SharedPreferences`. |
 | `data/BlockStatePersistence.kt` | Contrato de leitura e gravação usado pelo store e por seus testes. |
 | `data/SystemTimer.kt` | Fornece `elapsedRealtime` e o contador de boots do Android. |
-| `accessibility/InstagramBlockService.kt` | Observa entradas, evita contagens repetidas, persiste a tentativa e bloqueia a janela. |
+| `usage/InstagramMonitor.kt` | Consulta eventos de uso, registra entradas no Instagram e mostra a sobreposição de bloqueio. |
+| `usage/UsageAccess.kt` | Confere a autorização de acesso aos dados de uso. |
 | `accessibility/InstagramTarget.kt` | Aceita somente o pacote `com.instagram.android`. |
-| `accessibility/ServiceConnectionState.kt` | Expõe a conexão do serviço no processo atual por `StateFlow`. |
 | `updates/UpdateChecker.kt`, `updates/UpdateInfo.kt` | Consultam Releases, representam a atualização, baixam o APK e abrem o instalador. |
 | `ui/dashboard/DashboardScreen.kt`, `ui/dashboard/UpdateUiState.kt` | Painel e estado visual das atualizações. |
-| `ui/blocked/BlockedScreen.kt` | Conteúdo visual da tela de bloqueio. |
+| `ui/blocked/BlockedScreen.kt` | Tela legada associada a `BlockedActivity`. |
 | `notifications/` | Mantém o canal, o cronômetro na notificação, os avisos de transição e a restauração após boot. |
 | `ui/components/StatCard.kt` | Card de contagem reutilizado no painel. |
 | `ui/theme/Theme.kt` | Paleta e tema Compose do painel. |
@@ -33,16 +33,16 @@ As Activities ainda coordenam estado e operações. A extração das funções C
 
 ## Fluxo de bloqueio
 
-1. O serviço recebe um evento `TYPE_WINDOW_STATE_CHANGED`.
+1. O serviço em primeiro plano consulta `UsageStatsManager.queryEvents()` a cada segundo.
 2. `InstagramTarget` verifica se o pacote é o Instagram oficial.
 3. O serviço permite a entrada durante a janela automática de dez minutos e ignora eventos duplicados ou uma tentativa já em processamento.
 4. `BlockStore` calcula o novo prazo, incrementa os contadores e grava o estado em uma tarefa de I/O.
-5. Após a gravação bem-sucedida, o serviço tenta abrir `BlockedActivity`.
-6. Se essa abertura falhar, tenta a ação global HOME e, em seguida, uma Intent para a tela inicial.
+5. Após a gravação bem-sucedida, o serviço mostra uma sobreposição sobre o Instagram.
+6. Ao detectar outro app em primeiro plano, remove a sobreposição.
 
-Eventos do Instagram recebidos no intervalo de um segundo são tratados como duplicados. Durante a liberação, os eventos não geram tentativas. Como o serviço recebe somente eventos do pacote do Instagram, não acompanha janelas de bancos, launcher ou outros aplicativos.
+Eventos de entrada são deduplicados. Durante a liberação, não geram tentativas. O monitor consulta eventos de todos os pacotes para reconhecer a saída do Instagram, mas só registra tentativas do pacote oficial.
 
-Se a gravação falhar, a tentativa não é considerada concluída e o serviço permite uma nova tentativa de processamento. A sequência crítica entre gravação e bloqueio usa `NonCancellable` para evitar uma interrupção entre as duas ações.
+Se a gravação falhar, a tentativa não é considerada concluída. O monitor depende de autorização de uso e sobreposição, e o sistema pode limitar a execução em segundo plano.
 
 ## Regra de tempo
 
@@ -53,7 +53,7 @@ novo prazo = agora + mínimo(restante + 5 minutos, 3 horas)
 
 Se restam quatro minutos, a próxima tentativa passa a mostrar aproximadamente nove minutos. Depois que a liberação de dez minutos termina, outra tentativa inicia cinco minutos. A implementação também limita a soma para evitar overflow de `Long`.
 
-Quando o cronômetro chega a zero, começa uma janela de liberação de dez minutos corridos, ancorada no prazo persistido. A tela de bloqueio volta automaticamente ao launcher. Durante a liberação, entradas não alteram prazo nem contadores. Depois dela, a próxima entrada inicia cinco minutos de bloqueio. Os contadores não são zerados quando o tempo termina; a contagem diária usa a data local do aparelho.
+Quando o cronômetro chega a zero, começa uma janela de liberação de dez minutos corridos, ancorada no prazo persistido. A sobreposição é removida. Durante a liberação, entradas não alteram prazo nem contadores. Depois dela, a próxima entrada inicia cinco minutos de bloqueio. Os contadores não são zerados quando o tempo termina; a contagem diária usa a data local do aparelho.
 
 ## Persistência e ciclo automático
 
@@ -65,7 +65,7 @@ Quando o cronômetro chega a zero, começa uma janela de liberação de dez minu
 
 Não existe mais pausa manual. Instalações atualizadas podem conservar o arquivo antigo `block_control`, mas suas chaves deixam de ser lidas e não alteram o ciclo.
 
-O significado de `deadline_ms` depende de `timer_phase`: é o fim monotônico da fase bloqueada ou da liberação atual. O conjunto sobrevive ao encerramento do processo. A conexão exposta por `ServiceConnectionState` representa apenas o processo atual e é consultada separadamente da configuração de acessibilidade do Android.
+O significado de `deadline_ms` depende de `timer_phase`: é o fim monotônico da fase bloqueada ou da liberação atual. O conjunto sobrevive ao encerramento do processo. As permissões especiais são consultadas separadamente do estado do ciclo.
 
 O prazo ativo usa `SystemClock.elapsedRealtime()`, independente da hora civil. A fase, o boot atual e o restante são salvos em checkpoints de cinco segundos. No desligamento normal há um checkpoint imediato. Depois de outro boot, o prazo é reconstruído a partir do restante salvo; em uma queda abrupta podem ser repetidos até cinco segundos, mas nenhum tempo é removido. Estados criados por versões antigas são migrados uma única vez a partir do prazo civil anterior.
 
@@ -77,7 +77,7 @@ O verificador consulta `https://api.github.com/repos/YkDLS/InstBlock/releases/la
 
 A comparação de versão existente usa partes numéricas; não é uma implementação completa de Semantic Versioning. O download usa HTTPS e os hosts permitidos no código. A instalação depende do Android e da confirmação do usuário.
 
-O serviço observa mudanças de janela e nomes de pacotes, sem solicitar leitura do conteúdo das telas. Não há conta ou servidor próprio. A internet é usada para as atualizações solicitadas pelo usuário. Veja [SECURITY.md](../SECURITY.md).
+O serviço consulta eventos de uso e nomes de pacotes, sem solicitar leitura do conteúdo das telas. Não há conta ou servidor próprio. A internet é usada para as atualizações solicitadas pelo usuário. Veja [SECURITY.md](../SECURITY.md).
 
 ## Verificação
 

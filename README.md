@@ -19,11 +19,11 @@ Ao terminar o bloqueio, a janela de dez minutos começa imediatamente e continua
 
 1. Acesse as [Releases](https://github.com/YkDLS/InstBlock/releases), escolha a versão e baixe o arquivo `.apk` anexado. Os arquivos automáticos **Source code** não são instaladores. Os APKs atualmente publicados são builds de debug.
 2. Instale no aparelho Android. Se solicitado, autorize a instalação para o aplicativo usado no download.
-3. Abra o InstBlock e toque em **Abrir configurações de acessibilidade**.
-4. Ative **Bloqueio do Instagram** nas configurações de acessibilidade do Android. Os nomes dos menus podem variar conforme o aparelho.
-5. Volte ao painel para conferir a conexão do serviço e o estado do ciclo automático.
+3. Abra o InstBlock e toque em **Configurar próxima permissão necessária**.
+4. Conceda **Acesso aos dados de uso** e, em seguida, **Exibir sobre outros apps** nas configurações do Android.
+5. Volte ao painel para conferir o estado da proteção e do ciclo automático.
 
-O serviço depende da ativação manual pelo usuário. O InstBlock é uma ferramenta de autocontrole e pode ser desativado nas configurações do Android.
+O monitor depende dessas duas permissões e mantém uma notificação enquanto consulta os eventos de uso em segundo plano. O InstBlock é uma ferramenta de autocontrole e pode ser desativado nas configurações do Android.
 
 Para atualizar sem perder o histórico, o novo APK precisa ter o mesmo identificador e uma assinatura compatível. Builds debug gerados com chaves diferentes podem exigir desinstalar a versão anterior; a desinstalação apaga os dados locais.
 
@@ -37,7 +37,9 @@ Os dados de tentativas e bloqueio ficam em `SharedPreferences` no aparelho. O ap
 
 | Permissão ou recurso | Finalidade |
 | --- | --- |
-| Serviço de acessibilidade | Observa mudanças de janela e compara o nome do pacote com o Instagram oficial; não solicita leitura do conteúdo da tela. |
+| Acesso aos dados de uso | Consulta o app em primeiro plano para detectar a entrada no Instagram oficial. |
+| Exibir sobre outros apps | Mostra a tela de bloqueio quando o Instagram está em primeiro plano. |
+| Serviço em primeiro plano | Mantém o monitor ativo e exibe uma notificação persistente. |
 | Internet | Consulta Releases e baixa o APK após uma ação do usuário. |
 | Instalação de pacotes | Abre o instalador do Android para o APK baixado; a instalação depende da confirmação do usuário. |
 | Notificações | Mostra o tempo restante e avisa quando começa a liberação ou quando a proteção volta. |
@@ -45,13 +47,13 @@ Os dados de tentativas e bloqueio ficam em `SharedPreferences` no aparelho. O ap
 
 Veja também a [política de segurança e privacidade](SECURITY.md).
 
-O serviço restringe os eventos ao pacote oficial do Instagram tanto no XML quanto em tempo de execução. Alguns aplicativos bancários, por política própria, recusam qualquer serviço de acessibilidade de terceiros apenas por ele estar ativado. Nesses casos, o Android não permite ao InstBlock criar uma exceção: é necessário desativar o serviço manualmente antes de abrir o banco e reativá-lo depois.
+O monitor consulta eventos de uso do sistema e aplica o bloqueio somente quando o pacote em primeiro plano é o Instagram oficial. A sobreposição é retirada ao trocar de aplicativo. Bancos podem aplicar regras próprias contra sobreposições ou permissões especiais; confirme a compatibilidade no aparelho.
 
 ## Ambiente de desenvolvimento
 
 | Item | Versão/configuração |
 | --- | --- |
-| Versão do app | 1.2.0 (`versionCode 6`) |
+| Versão do app no código | 1.3.0 (`versionCode 7`) |
 | Android mínimo | Android 8.0 / API 26 |
 | Android SDK Platform | 35 (`compileSdk` e `targetSdk`) |
 | JDK usado no CI | 17 |
@@ -103,10 +105,10 @@ O projeto usa um único módulo Android, `app`. Os pacotes abaixo ficam em `app/
 
 | Caminho | Responsabilidade |
 | --- | --- |
-| `MainActivity.kt`, `BlockedActivity.kt` | Integração das telas com o ciclo de vida e as ações do Android. |
+| `MainActivity.kt` | Painel, permissões e ações do Android. `BlockedActivity.kt` é componente legado sem uso no fluxo atual. |
 | `domain/` | Regras de tempo e modelos de estado. |
 | `data/` | Persistência local, relógio monotônico e contagem de tentativas. |
-| `accessibility/` | Detecção do Instagram, bloqueio e estado da conexão do serviço. |
+| `usage/`, `accessibility/InstagramTarget.kt` | Monitoramento de uso e identificação do pacote oficial do Instagram. |
 | `notifications/` | Canal de notificação, cronômetro, avisos de transição e restauração após boot. |
 | `updates/` | Consulta de Releases, download e abertura do instalador. |
 | `ui/dashboard/`, `ui/blocked/` | Telas em Compose. |

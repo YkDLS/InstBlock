@@ -2,13 +2,13 @@
 
 O aplicativo não possui conta ou servidor próprio. A permissão de internet é usada exclusivamente pelo verificador opcional de atualizações, que consulta as Releases públicas do repositório oficial no GitHub.
 
-O serviço de acessibilidade observa apenas eventos de mudança de janela e compara o pacote com `com.instagram.android`. Ele não solicita leitura do conteúdo da tela.
+O monitor consulta eventos de uso do Android para identificar quando `com.instagram.android` entra em primeiro plano. Ele não lê o conteúdo da tela.
 
 ## Controles implementados
 
 - O manifesto desativa backup e tráfego HTTP em texto claro.
-- O serviço de acessibilidade recebe somente mudanças de janela do pacote oficial do Instagram e não recupera conteúdo.
-- Activities, receiver e `FileProvider` que não precisam ser públicos não são exportados; o serviço exportado exige a permissão de assinatura `BIND_ACCESSIBILITY_SERVICE`.
+- A sobreposição de bloqueio aparece apenas sobre o Instagram e é removida quando outro aplicativo entra em primeiro plano.
+- O serviço de monitoramento, Activities, receiver e `FileProvider` não são exportados.
 - O `PendingIntent` das notificações é imutável, e o conteúdo do canal é privado na tela bloqueada.
 - O `FileProvider` compartilha apenas `cache/updates/`, não todo o cache do aplicativo.
 - Metadados de atualização são limitados a 1 MiB e APKs a 200 MiB.
@@ -21,7 +21,7 @@ O serviço de acessibilidade observa apenas eventos de mudança de janela e comp
 
 O atualizador confia na disponibilidade do GitHub e no TLS do Android, mas não confia apenas no conteúdo de uma Release: pacote e assinatura são verificados localmente. A chave de assinatura usada para distribuir uma versão deve ser preservada; trocar a chave sem uma linhagem de rotação compatível fará a atualização ser recusada.
 
-Aplicativos bancários podem recusar qualquer serviço de acessibilidade habilitado, mesmo quando o serviço não recebe eventos do banco. Essa política externa não pode ser contornada pelo InstBlock.
+Aplicativos bancários podem recusar apps que tenham permissão de sobreposição ou acesso ao uso. Essa política externa não pode ser controlada pelo InstBlock; a compatibilidade precisa ser verificada no aparelho.
 
 As preferências locais não contêm credenciais nem conteúdo de tela. Um usuário com root ou controle físico total do dispositivo pode modificar esses dados; esse cenário está fora do objetivo de uma ferramenta de autocontrole local.
 

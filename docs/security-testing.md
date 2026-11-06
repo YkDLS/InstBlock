@@ -8,9 +8,9 @@ O Android Lint cobre manifesto, permissões, APIs, recursos e práticas conhecid
 
 ## Roteiro manual
 
-1. Confirme no APK que somente `INTERNET`, `REQUEST_INSTALL_PACKAGES`, `POST_NOTIFICATIONS` e `RECEIVE_BOOT_COMPLETED` são solicitadas.
+1. Confirme no APK as permissões `INTERNET`, `REQUEST_INSTALL_PACKAGES`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `PACKAGE_USAGE_STATS`, `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE` e `FOREGROUND_SERVICE_SPECIAL_USE`.
 2. Confirme que `BlockedActivity`, `TimerReceiver` e `FileProvider` não são exportados.
-3. Confirme que o `AccessibilityService` exige `BIND_ACCESSIBILITY_SERVICE`, observa apenas `com.instagram.android` e mantém `canRetrieveWindowContent=false`.
+3. Confirme que não há `AccessibilityService` no manifesto e que o monitor é não exportado; verifique que a sobreposição só aparece sobre `com.instagram.android`.
 4. Intercepte uma consulta de atualização em ambiente de teste e redirecione para host não autorizado; o download deve falhar.
 5. Tente instalar um APK com outro package name ou outra assinatura pelo fluxo de atualização; o arquivo deve ser recusado antes do instalador.
 6. Interrompa um download; não deve existir APK final utilizável, apenas o `.part` removido na falha.
@@ -27,6 +27,6 @@ O Android Lint cobre manifesto, permissões, APIs, recursos e práticas conhecid
 ## Riscos residuais
 
 - Não há pinning de certificado; a confiança segue a store de CAs do Android.
-- O serviço de acessibilidade pode ser desativado pelo usuário ou pelo sistema.
+- O sistema pode interromper o serviço em primeiro plano; o usuário pode retirar acesso ao uso ou à sobreposição.
 - Uma queda abrupta pode acrescentar até um intervalo de checkpoint, mas não encurta a espera.
 - Builds debug não são adequados como estratégia permanente de distribuição; releases estáveis devem usar assinatura própria, protegida e reproduzível.
