@@ -1,4 +1,4 @@
-# Documentação funcional — InstBlock v1.3.2
+# Documentação funcional — InstBlock v1.3.3
 
 Este documento resume o comportamento do aplicativo para produto, desenvolvimento e validação. A descrição técnica detalhada está em [docs/architecture.md](docs/architecture.md), e o roteiro de testes no aparelho está em [docs/testing.md](docs/testing.md).
 
@@ -15,7 +15,7 @@ O monitor usa `UsageStatsManager` para detectar a entrada do Instagram oficial e
 3. Cada nova entrada bloqueada acrescenta cinco minutos ao tempo restante, até o máximo de três horas.
 4. Eventos recebidos no intervalo de um segundo são tratados como duplicados.
 5. Quando o bloqueio termina, começa uma liberação de dez minutos corridos. Durante esse período, entradas no Instagram não geram novas tentativas.
-6. Ao final da liberação, a proteção volta sozinha. A próxima entrada inicia um novo bloqueio de cinco minutos.
+6. Ao final da liberação, se o Instagram ainda estiver aberto e a tela desbloqueada, a sobreposição volta e inicia um novo bloqueio de cinco minutos. Se o usuário estiver fora do Instagram, o bloqueio começa na próxima entrada.
 
 Não existe botão de pausa manual. A sobreposição é retirada quando o período bloqueado termina ou quando o usuário sai do Instagram pela navegação do Android.
 
@@ -70,7 +70,7 @@ O APK publicado da v1.1.2 foi assinado com uma chave debug efêmera que não est
 
 | Item | Configuração |
 | --- | --- |
-| Versão | `1.3.2` (`versionCode 9`) |
+| Versão | `1.3.3` (`versionCode 10`) |
 | Linguagem | Kotlin 2.0.21 |
 | Interface | Jetpack Compose e Material 3 |
 | Identificador | `com.example.instagramblocker` |

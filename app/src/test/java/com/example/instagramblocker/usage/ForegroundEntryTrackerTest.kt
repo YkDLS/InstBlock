@@ -12,6 +12,10 @@ class ForegroundEntryTrackerTest {
         assertFalse(tracker.observe(101L, "com.instagram.android"))
         assertFalse(tracker.observe(102L, "com.example.other"))
         assertTrue(tracker.observe(103L, "com.instagram.android"))
+        assertTrue(tracker.isTargetForeground)
+        tracker.clearForeground()
+        assertFalse(tracker.isTargetForeground)
+        assertTrue(tracker.observe(104L, "com.instagram.android"))
     }
 
     @Test fun newEntriesAreSeenAfterWallClockMovesBackwards() {

@@ -5,6 +5,12 @@ internal class ForegroundEntryTracker(private val targetPackage: String) {
     var lastEventTime = 0L
         private set
     private var foregroundPackage: String? = null
+    val isTargetForeground: Boolean
+        get() = foregroundPackage == targetPackage
+
+    fun clearForeground() {
+        foregroundPackage = null
+    }
 
     fun resetIfClockMovedBack(nowWallMs: Long) {
         if (nowWallMs < lastEventTime) {

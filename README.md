@@ -53,7 +53,7 @@ O monitor consulta eventos de uso do sistema e aplica o bloqueio somente quando 
 
 | Item | Versão/configuração |
 | --- | --- |
-| Versão do app no código | 1.3.2 (`versionCode 9`) |
+| Versão do app no código | 1.3.3 (`versionCode 10`) |
 | Android mínimo | Android 8.0 / API 26 |
 | Android SDK Platform | 35 (`compileSdk` e `targetSdk`) |
 | JDK usado no CI | 17 |
