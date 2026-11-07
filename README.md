@@ -1,6 +1,6 @@
 # InstBlock
 
-Aplicativo Android para ajudar a manter o foco longe do Instagram. Desenvolvido em Kotlin e Jetpack Compose, detecta a abertura do aplicativo oficial, registra a tentativa e apresenta uma tela de bloqueio.
+Aplicativo Android para ajudar a manter o foco longe do Instagram. Desenvolvido em Kotlin e Jetpack Compose, detecta a abertura do aplicativo oficial, registra a tentativa e apresenta uma tela de bloqueio com mensagens motivadoras e bem-humoradas sorteadas a cada entrada.
 
 ## Como funciona
 
@@ -53,7 +53,7 @@ O monitor consulta eventos de uso do sistema e aplica o bloqueio somente quando 
 
 | Item | Versão/configuração |
 | --- | --- |
-| Versão do app no código | 1.3.1 (`versionCode 8`) |
+| Versão do app no código | 1.3.2 (`versionCode 9`) |
 | Android mínimo | Android 8.0 / API 26 |
 | Android SDK Platform | 35 (`compileSdk` e `targetSdk`) |
 | JDK usado no CI | 17 |
@@ -113,6 +113,7 @@ O projeto usa um único módulo Android, `app`. Os pacotes abaixo ficam em `app/
 | `updates/` | Consulta de Releases, download e abertura do instalador. |
 | `ui/dashboard/`, `ui/blocked/` | Telas em Compose. |
 | `ui/components/`, `ui/theme/` | Componentes e tema do painel. |
+| `Images/img_instblock.png`, `app/src/main/res/drawable-nodpi/ic_launcher.png` | Arte original e ícone instalado no Android. |
 | `app/src/test/java/com/example/instagramblocker/` | Testes locais com pacotes que espelham o código de produção. |
 | `docs/` | Arquitetura e roteiro de verificação manual. |
 

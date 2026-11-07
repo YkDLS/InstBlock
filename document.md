@@ -1,4 +1,4 @@
-# Documentação funcional — InstBlock v1.3.1
+# Documentação funcional — InstBlock v1.3.2
 
 Este documento resume o comportamento do aplicativo para produto, desenvolvimento e validação. A descrição técnica detalhada está em [docs/architecture.md](docs/architecture.md), e o roteiro de testes no aparelho está em [docs/testing.md](docs/testing.md).
 
@@ -11,7 +11,7 @@ O monitor usa `UsageStatsManager` para detectar a entrada do Instagram oficial e
 ## 2. Ciclo automático
 
 1. A instalação limpa começa em **Proteção pronta**, com cronômetro e contadores zerados.
-2. A primeira entrada no Instagram registra uma tentativa e inicia cinco minutos de bloqueio.
+2. A primeira entrada no Instagram registra uma tentativa e inicia cinco minutos de bloqueio. A tela sorteia uma mensagem motivadora e bem-humorada, sem repetir a mensagem da entrada anterior.
 3. Cada nova entrada bloqueada acrescenta cinco minutos ao tempo restante, até o máximo de três horas.
 4. Eventos recebidos no intervalo de um segundo são tratados como duplicados.
 5. Quando o bloqueio termina, começa uma liberação de dez minutos corridos. Durante esse período, entradas no Instagram não geram novas tentativas.
@@ -70,7 +70,7 @@ O APK publicado da v1.1.2 foi assinado com uma chave debug efêmera que não est
 
 | Item | Configuração |
 | --- | --- |
-| Versão | `1.3.1` (`versionCode 8`) |
+| Versão | `1.3.2` (`versionCode 9`) |
 | Linguagem | Kotlin 2.0.21 |
 | Interface | Jetpack Compose e Material 3 |
 | Identificador | `com.example.instagramblocker` |

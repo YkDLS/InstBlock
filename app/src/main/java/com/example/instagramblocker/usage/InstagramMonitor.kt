@@ -21,6 +21,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.random.Random
 
 class InstagramMonitor : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -30,6 +31,7 @@ class InstagramMonitor : Service() {
     private var lastBlockedAt = 0L
     private var bootCount = 0
     private var previousPhase: BlockPhase? = null
+    private var lastMessageIndex = -1
     private var blockOverlay: BlockOverlayView? = null
     private var overlayManager: WindowManager? = null
 
@@ -104,7 +106,7 @@ class InstagramMonitor : Service() {
 
     private fun showBlockOverlay() {
         if (!android.provider.Settings.canDrawOverlays(this) || blockOverlay != null) return
-        val view = BlockOverlayView(this) {
+        val view = BlockOverlayView(this, nextMotivation()) {
             val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             try {
                 startActivity(home)
@@ -125,6 +127,18 @@ class InstagramMonitor : Service() {
     private fun removeBlockOverlay() {
         blockOverlay?.let { try { overlayManager?.removeView(it) } catch (_: Exception) { } }
         blockOverlay = null
+    }
+
+    private fun nextMotivation(): String {
+        val messages = resources.getStringArray(com.example.instagramblocker.R.array.block_motivations)
+        val index = if (lastMessageIndex < 0 || messages.size < 2) {
+            Random.nextInt(messages.size)
+        } else {
+            val next = Random.nextInt(messages.size - 1)
+            if (next >= lastMessageIndex) next + 1 else next
+        }
+        lastMessageIndex = index
+        return messages[index]
     }
 
     companion object {
