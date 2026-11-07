@@ -28,7 +28,7 @@ class UpdateChecker(private val context: Context) {
             val asset = assets.getJSONObject(index)
             val name = asset.optString("name")
             val url = asset.optString("browser_download_url")
-            if (name.endsWith(".apk", ignoreCase = true) && UpdateSecurityPolicy.isAllowedDownloadUrl(url)) {
+            if (name.endsWith(".apk", ignoreCase = true) && UpdateSecurityPolicy.isAllowedReleaseAssetUrl(url)) {
                 return UpdateInfo(version, url, name)
             }
         }
@@ -36,7 +36,7 @@ class UpdateChecker(private val context: Context) {
     }
 
     suspend fun download(update: UpdateInfo): File {
-        require(UpdateSecurityPolicy.isAllowedDownloadUrl(update.downloadUrl)) { "Fonte de atualização não permitida" }
+        require(UpdateSecurityPolicy.isAllowedReleaseAssetUrl(update.downloadUrl)) { "Fonte de atualização não permitida" }
         val updateDir = File(context.cacheDir, UPDATE_DIRECTORY).apply { mkdirs() }
         val output = File(updateDir, UPDATE_FILE_NAME)
         val partial = File(updateDir, "$UPDATE_FILE_NAME.part")
@@ -163,6 +163,7 @@ class UpdateChecker(private val context: Context) {
         val archive = packageInfo(apk.absolutePath) ?: return false
         if (archive.packageName != context.packageName) return false
         val installed = packageInfo(context.packageName, installed = true) ?: return false
+        if (!UpdateSecurityPolicy.isNewerVersionCode(archive.versionCodeCompat(), installed.versionCodeCompat())) return false
         val archiveCertificates = certificateDigests(archive.signaturesCompat())
         val installedCertificates = certificateDigests(installed.signaturesCompat())
         return archiveCertificates.isNotEmpty() && archiveCertificates == installedCertificates
@@ -189,6 +190,10 @@ class UpdateChecker(private val context: Context) {
         } else {
             signatures.orEmpty().toList()
         }
+
+    @Suppress("DEPRECATION")
+    private fun android.content.pm.PackageInfo.versionCodeCompat(): Long =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) longVersionCode else versionCode.toLong()
 
     private fun certificateDigests(signatures: List<Signature>): Set<String> = signatures.map { signature ->
         MessageDigest.getInstance("SHA-256").digest(signature.toByteArray()).joinToString("") { byte ->

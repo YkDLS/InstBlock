@@ -14,9 +14,25 @@ internal object UpdateSecurityPolicy {
         "github-releases.githubusercontent.com",
     )
 
-    fun isAllowedApiUrl(url: String): Boolean = validHttpsUri(url)?.host == "api.github.com"
+    fun isAllowedApiUrl(url: String): Boolean = validHttpsUri(url)?.let { uri ->
+        uri.host == "api.github.com" &&
+            uri.rawPath == "/repos/YkDLS/InstBlock/releases/latest" &&
+            uri.rawQuery == null
+    } ?: false
+
+    fun isAllowedReleaseAssetUrl(url: String): Boolean = validHttpsUri(url)?.let { uri ->
+        val prefix = "/YkDLS/InstBlock/releases/download/"
+        val segments = uri.rawPath.removePrefix(prefix).split('/')
+        uri.host == "github.com" &&
+            uri.rawPath.startsWith(prefix) &&
+            segments.size == 2 && segments.all { it.isNotEmpty() } &&
+            uri.rawQuery == null
+    } ?: false
 
     fun isAllowedDownloadUrl(url: String): Boolean = validHttpsUri(url)?.host in downloadHosts
+
+    fun isNewerVersionCode(candidate: Long, installed: Long): Boolean =
+        candidate > installed
 
     fun isNewerVersion(remote: String, local: String): Boolean {
         val remoteParts = versionParts(remote) ?: return false

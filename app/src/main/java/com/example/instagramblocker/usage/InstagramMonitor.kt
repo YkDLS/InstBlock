@@ -26,8 +26,7 @@ class InstagramMonitor : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var store: BlockStore
     private lateinit var notifications: BlockNotificationManager
-    private var lastEventTime = 0L
-    private var foregroundPackage: String? = null
+    private val foregroundTracker = ForegroundEntryTracker(InstagramTarget.PACKAGE_NAME)
     private var lastBlockedAt = 0L
     private var bootCount = 0
     private var previousPhase: BlockPhase? = null
@@ -53,9 +52,10 @@ class InstagramMonitor : Service() {
         while (true) {
             if (UsageAccess.isGranted(this) && android.provider.Settings.canDrawOverlays(this)) {
                 val now = System.currentTimeMillis()
+                foregroundTracker.resetIfClockMovedBack(now)
                 val events = usage.queryEvents((now - EVENT_LOOKBACK_MS).coerceAtLeast(0), now)
                 val event = UsageEvents.Event()
-                var newestTime = lastEventTime
+                var newestTime = foregroundTracker.lastEventTime
                 var newestPackage: String? = null
                 while (events != null && events.hasNextEvent()) {
                     events.getNextEvent(event)
@@ -65,9 +65,7 @@ class InstagramMonitor : Service() {
                     }
                 }
                 if (newestPackage != null) {
-                    val enteredInstagram = newestPackage == InstagramTarget.PACKAGE_NAME && foregroundPackage != InstagramTarget.PACKAGE_NAME
-                    foregroundPackage = newestPackage
-                    lastEventTime = newestTime
+                    val enteredInstagram = foregroundTracker.observe(newestTime, newestPackage)
                     if (newestPackage != InstagramTarget.PACKAGE_NAME) removeBlockOverlay()
                     if (enteredInstagram) {
                     val elapsed = SystemClock.elapsedRealtime()

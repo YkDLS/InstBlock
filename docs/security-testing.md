@@ -2,13 +2,13 @@
 
 ## Escopo automatizado
 
-Os testes de `UpdateSecurityPolicyTest` exercitam URLs com host sufixado, `userinfo`, HTTP, porta inesperada, fragmento, host não autorizado, versão malformada e downgrade. Os testes do armazenamento verificam que mudança de relógio e reboot não encurtam a espera.
+Os testes de `UpdateSecurityPolicyTest` exercitam URLs com host sufixado, `userinfo`, HTTP, porta inesperada, fragmento, host não autorizado, caminho fora da Release oficial, versão malformada e downgrade de `versionCode`. Os testes do armazenamento verificam que mudança de relógio e reboot não encurtam a espera; `ForegroundEntryTrackerTest` verifica que uma mudança para trás na hora civil não paralisa a detecção de novas entradas. `node --test landing-page/serve.test.mjs` verifica os cabeçalhos HTTP, os métodos aceitos e a contenção de caminhos do servidor local.
 
 O Android Lint cobre manifesto, permissões, APIs, recursos e práticas conhecidas pela versão do Android Gradle Plugin. O relatório HTML deve ser preservado como artefato de CI, não versionado.
 
 ## Roteiro manual
 
-1. Confirme no APK as permissões `INTERNET`, `REQUEST_INSTALL_PACKAGES`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `PACKAGE_USAGE_STATS`, `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE` e `FOREGROUND_SERVICE_SPECIAL_USE`.
+1. Confirme no APK as permissões `INTERNET`, `REQUEST_INSTALL_PACKAGES`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `PACKAGE_USAGE_STATS`, `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE` e `FOREGROUND_SERVICE_SPECIAL_USE`. No APK debug, confirme também que `PreviewActivity` não foi incluída.
 2. Confirme que `BlockedActivity`, `TimerReceiver` e `FileProvider` não são exportados.
 3. Confirme que não há `AccessibilityService` no manifesto e que o monitor é não exportado; verifique que a sobreposição só aparece sobre `com.instagram.android`.
 4. Intercepte uma consulta de atualização em ambiente de teste e redirecione para host não autorizado; o download deve falhar.
