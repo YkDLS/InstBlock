@@ -12,4 +12,18 @@
         <item quantity="one">%d tentativa registrada</item>
         <item quantity="other">%d tentativas registradas</item>
     </plurals>
+    <string-array name="block_motivations">
+        <item>Seu dedo quer rolar, mas sua meta quer decolar</item>
+        <item>O feed não vai sentir sua falta, mas seu foco vai agradecer</item>
+        <item>Plot twist: você virou protagonista fora da tela</item>
+        <item>Missão de hoje: não negociar com o botão de Reels</item>
+        <item>Seu foco ganhou uma promoção, o algoritmo perdeu o emprego</item>
+        <item>O Instagram saiu para tomar um ar, aproveite a carona</item>
+        <item>Você venceu o feed, já pode colocar estrategista no currículo</item>
+        <item>Desafio aceito: vencer o algoritmo com um copo d’água</item>
+        <item>Seu eu do futuro mandou um áudio: valeu por essa pausa</item>
+        <item>Respira, pisca, toma água — o mundo real carrega mais rápido</item>
+        <item>Notificação do universo: você é mais interessante que o feed</item>
+        <item>Se o dedo procurou o Instagram, dê a ele uma tarefa melhor</item>
+    </string-array>
 </resources>
