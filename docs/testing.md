@@ -39,6 +39,7 @@ Registre a versão do Android, o modelo, a versão do app e o commit testado. Os
 | Nova entrada após voltar ao launcher | Registra mais uma tentativa e soma cinco minutos ao tempo restante. |
 | Eventos repetidos da mesma entrada | Não multiplica a contagem para uma única entrada. |
 | Sair do Instagram pela navegação do Android | A sobreposição desaparece quando outro app entra em primeiro plano. |
+| Tocar em Voltar para a tela inicial | O launcher abre e a sobreposição desaparece. |
 | Abrir outro aplicativo ou Instagram no navegador | O InstBlock não bloqueia esses pacotes. |
 | Acumular tentativas até o limite | Tempo restante não supera três horas; o contador continua aumentando. |
 | Deixar o cronômetro chegar a zero | A sobreposição fecha e começa uma liberação de dez minutos corridos. |
