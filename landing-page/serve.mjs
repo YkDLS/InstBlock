@@ -1,9 +1,9 @@
-import { createReadStream, statSync } from "node:fs";
+import { createReadStream, realpathSync, statSync } from "node:fs";
 import { createServer } from "node:http";
-import { extname, isAbsolute, join, normalize, relative } from "node:path";
+import { extname, isAbsolute, join, normalize, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = normalize(fileURLToPath(new URL("./dist/", import.meta.url)));
+const root = realpathSync(normalize(fileURLToPath(new URL("./dist/", import.meta.url))));
 const types = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -18,6 +18,7 @@ const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
 };
+const escapesRoot = (pathFromRoot) => pathFromRoot === ".." || pathFromRoot.startsWith(`..${sep}`) || isAbsolute(pathFromRoot);
 
 createServer((request, response) => {
   if (request.method !== "GET" && request.method !== "HEAD") {
@@ -37,13 +38,22 @@ createServer((request, response) => {
   const file = normalize(join(root, requested));
   const pathFromRoot = relative(root, file);
 
-  if (pathFromRoot.startsWith("..") || isAbsolute(pathFromRoot)) {
+  if (escapesRoot(pathFromRoot)) {
     response.writeHead(403, securityHeaders).end("Forbidden");
     return;
   }
 
   try {
-    const target = statSync(file).isDirectory() ? join(file, "index.html") : file;
+    const target = realpathSync(statSync(file).isDirectory() ? join(file, "index.html") : file);
+    const resolvedPathFromRoot = relative(root, target);
+    if (escapesRoot(resolvedPathFromRoot)) {
+      response.writeHead(403, securityHeaders).end("Forbidden");
+      return;
+    }
+    if (!statSync(target).isFile()) {
+      response.writeHead(404, securityHeaders).end("Not found");
+      return;
+    }
     response.writeHead(200, {
       ...securityHeaders,
       "Content-Type": types[extname(target)] ?? "application/octet-stream",

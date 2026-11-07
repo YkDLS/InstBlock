@@ -34,6 +34,9 @@ jobs:
       - name: Unit tests, lint, and APK
         run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon
 
+      - name: Landing server security tests
+        run: node --test landing-page/serve.test.mjs
+
       - name: Record dependency tree
         run: ./gradlew :app:dependencies --configuration debugRuntimeClasspath --no-daemon > app/build/reports/debug-runtime-dependencies.txt
 
@@ -48,6 +51,7 @@ jobs:
           grep -q 'InstagramMonitor' "$manifest"
           ! grep -q 'android.permission.BIND_ACCESSIBILITY_SERVICE' "$manifest"
           grep -q 'android:name="androidx.core.content.FileProvider"' "$manifest"
+          ! grep -q 'androidx.compose.ui.tooling.PreviewActivity' "$manifest"
 
       - name: Upload security reports
         if: always()
