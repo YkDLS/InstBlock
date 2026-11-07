@@ -9,10 +9,6 @@ import android.os.SystemClock
 import android.os.PowerManager
 import android.view.WindowManager
 import android.graphics.PixelFormat
-import android.view.Gravity
-import android.view.View
-import android.widget.TextView
-import com.example.instagramblocker.BlockedActivity
 import com.example.instagramblocker.accessibility.InstagramTarget
 import com.example.instagramblocker.data.BlockStore
 import com.example.instagramblocker.data.SystemTimer
@@ -35,7 +31,7 @@ class InstagramMonitor : Service() {
     private var lastBlockedAt = 0L
     private var bootCount = 0
     private var previousPhase: BlockPhase? = null
-    private var blockOverlay: View? = null
+    private var blockOverlay: BlockOverlayView? = null
     private var overlayManager: WindowManager? = null
 
     override fun onCreate() {
@@ -97,6 +93,7 @@ class InstagramMonitor : Service() {
             notifications.update(state, elapsed)
             previousPhase = state.phase
             if (state.phase != BlockPhase.BLOCKED) removeBlockOverlay()
+            else blockOverlay?.update(com.example.instagramblocker.domain.BlockPolicy.remainingMs(elapsed, state.deadlineMs), state.attempts)
             delay(POLL_INTERVAL_MS)
         }
     }
@@ -109,14 +106,12 @@ class InstagramMonitor : Service() {
 
     private fun showBlockOverlay() {
         if (!android.provider.Settings.canDrawOverlays(this) || blockOverlay != null) return
-        val view = TextView(this).apply {
-            text = getString(com.example.instagramblocker.R.string.overlay_blocked)
-            textSize = 20f
-            setTextColor(android.graphics.Color.WHITE)
-            setBackgroundColor(android.graphics.Color.rgb(38, 32, 86))
-            gravity = Gravity.CENTER
-            setPadding(40, 40, 40, 40)
-            isClickable = true
+        val view = BlockOverlayView(this) {
+            val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                startActivity(home)
+                removeBlockOverlay()
+            } catch (_: Exception) { }
         }
         try {
             overlayManager?.addView(view, WindowManager.LayoutParams(
