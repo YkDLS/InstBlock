@@ -1,4 +1,4 @@
-# Documentação funcional — InstBlock v1.3.2
+# Documentação funcional — InstBlock v1.3.3
 
 Este documento resume o comportamento do aplicativo para produto, desenvolvimento e validação. A descrição técnica detalhada está em [docs/architecture.md](docs/architecture.md), e o roteiro de testes no aparelho está em [docs/testing.md](docs/testing.md).
 
@@ -70,7 +70,7 @@ O APK publicado da v1.1.2 foi assinado com uma chave debug efêmera que não est
 
 | Item | Configuração |
 | --- | --- |
-| Versão | `1.3.2` (`versionCode 9`) |
+| Versão | `1.3.3` (`versionCode 10`) |
 | Linguagem | Kotlin 2.0.21 |
 | Interface | Jetpack Compose e Material 3 |
 | Identificador | `com.example.instagramblocker` |
