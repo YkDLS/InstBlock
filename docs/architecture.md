@@ -53,7 +53,7 @@ novo prazo = agora + mínimo(restante + 5 minutos, 3 horas)
 
 Se restam quatro minutos, a próxima tentativa passa a mostrar aproximadamente nove minutos. Depois que a liberação de dez minutos termina, outra tentativa inicia cinco minutos. A implementação também limita a soma para evitar overflow de `Long`.
 
-Quando o cronômetro chega a zero, começa uma janela de liberação de dez minutos corridos, ancorada no prazo persistido. A sobreposição é removida. Durante a liberação, entradas não alteram prazo nem contadores. Depois dela, a próxima entrada inicia cinco minutos de bloqueio. Os contadores não são zerados quando o tempo termina; a contagem diária usa a data local do aparelho.
+Quando o cronômetro chega a zero, começa uma janela de liberação de dez minutos corridos, ancorada no prazo persistido. A sobreposição é removida. Durante a liberação, entradas não alteram prazo nem contadores. Depois dela, se o Instagram ainda estiver em primeiro plano e a tela estiver desbloqueada, o monitor registra uma tentativa e inicia cinco minutos de bloqueio imediatamente, sem depender de um novo evento de entrada. Fora do Instagram, a próxima entrada inicia o bloqueio. Os contadores não são zerados quando o tempo termina; a contagem diária usa a data local do aparelho.
 
 ## Persistência e ciclo automático
 

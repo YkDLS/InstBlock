@@ -1,5 +1,6 @@
 package com.example.instagramblocker.usage
 
+import android.app.KeyguardManager
 import android.app.Service
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
@@ -12,6 +13,7 @@ import android.graphics.PixelFormat
 import com.example.instagramblocker.accessibility.InstagramTarget
 import com.example.instagramblocker.data.BlockStore
 import com.example.instagramblocker.data.SystemTimer
+import com.example.instagramblocker.domain.BlockPolicy
 import com.example.instagramblocker.domain.BlockPhase
 import com.example.instagramblocker.notifications.BlockNotificationManager
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +52,8 @@ class InstagramMonitor : Service() {
 
     private suspend fun monitorLoop() {
         val usage = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
+        val power = getSystemService(POWER_SERVICE) as PowerManager
+        val keyguard = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
         overlayManager = getSystemService(WINDOW_SERVICE) as WindowManager
         while (true) {
             if (UsageAccess.isGranted(this) && android.provider.Settings.canDrawOverlays(this)) {
@@ -59,6 +63,7 @@ class InstagramMonitor : Service() {
                 val event = UsageEvents.Event()
                 var newestTime = foregroundTracker.lastEventTime
                 var newestPackage: String? = null
+                var enteredInstagram = false
                 while (events != null && events.hasNextEvent()) {
                     events.getNextEvent(event)
                     if (event.eventType in FOREGROUND_EVENTS && event.timeStamp > newestTime) {
@@ -67,33 +72,39 @@ class InstagramMonitor : Service() {
                     }
                 }
                 if (newestPackage != null) {
-                    val enteredInstagram = foregroundTracker.observe(newestTime, newestPackage)
-                    if (newestPackage != InstagramTarget.PACKAGE_NAME) removeBlockOverlay()
-                    if (enteredInstagram) {
-                    val elapsed = SystemClock.elapsedRealtime()
-                    val state = store.current(elapsed, bootCount)
-                    if (state.phase != BlockPhase.RELEASED && elapsed - lastBlockedAt >= DEBOUNCE_MS) {
+                    enteredInstagram = foregroundTracker.observe(newestTime, newestPackage)
+                }
+                val elapsed = SystemClock.elapsedRealtime()
+                val screenUsable = power.isInteractive && !keyguard.isKeyguardLocked
+                var state = withContext(Dispatchers.IO) { store.checkpoint(elapsed, bootCount) }
+                val shouldRecord = MonitorDecision.shouldRecordAttempt(
+                    phase = state.phase,
+                    instagramForeground = foregroundTracker.isTargetForeground,
+                    enteredInstagram = enteredInstagram,
+                    screenUsable = screenUsable,
+                    debounceElapsed = elapsed - lastBlockedAt >= DEBOUNCE_MS,
+                )
+                if (shouldRecord) {
+                    val saved = withContext(Dispatchers.IO) { store.recordAttempt(elapsed, bootCount) }
+                    if (saved) {
                         lastBlockedAt = elapsed
-                        val saved = withContext(Dispatchers.IO) { store.recordAttempt(elapsed, bootCount) }
-                        if (saved) {
-                            showBlockOverlay()
-                        }
-                    }
+                        state = withContext(Dispatchers.IO) { store.checkpoint(elapsed, bootCount) }
                     }
                 }
-                if (!(getSystemService(POWER_SERVICE) as PowerManager).isInteractive) removeBlockOverlay()
+                notifications.notifyTransition(previousPhase, state.phase)
+                notifications.update(state, elapsed)
+                previousPhase = state.phase
+                if (state.phase == BlockPhase.BLOCKED && foregroundTracker.isTargetForeground && screenUsable) {
+                    showBlockOverlay()
+                    blockOverlay?.update(BlockPolicy.remainingMs(elapsed, state.deadlineMs), state.attempts)
+                } else {
+                    removeBlockOverlay()
+                }
             } else {
                 removeBlockOverlay()
                 stopSelf()
                 return
             }
-            val elapsed = SystemTimer.elapsedRealtimeMs()
-            val state = withContext(Dispatchers.IO) { store.checkpoint(elapsed, bootCount) }
-            notifications.notifyTransition(previousPhase, state.phase)
-            notifications.update(state, elapsed)
-            previousPhase = state.phase
-            if (state.phase != BlockPhase.BLOCKED) removeBlockOverlay()
-            else blockOverlay?.update(com.example.instagramblocker.domain.BlockPolicy.remainingMs(elapsed, state.deadlineMs), state.attempts)
             delay(POLL_INTERVAL_MS)
         }
     }
@@ -110,6 +121,7 @@ class InstagramMonitor : Service() {
             val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             try {
                 startActivity(home)
+                foregroundTracker.clearForeground()
                 removeBlockOverlay()
             } catch (_: Exception) { }
         }

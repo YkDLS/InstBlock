@@ -15,7 +15,7 @@ O monitor usa `UsageStatsManager` para detectar a entrada do Instagram oficial e
 3. Cada nova entrada bloqueada acrescenta cinco minutos ao tempo restante, até o máximo de três horas.
 4. Eventos recebidos no intervalo de um segundo são tratados como duplicados.
 5. Quando o bloqueio termina, começa uma liberação de dez minutos corridos. Durante esse período, entradas no Instagram não geram novas tentativas.
-6. Ao final da liberação, a proteção volta sozinha. A próxima entrada inicia um novo bloqueio de cinco minutos.
+6. Ao final da liberação, se o Instagram ainda estiver aberto e a tela desbloqueada, a sobreposição volta e inicia um novo bloqueio de cinco minutos. Se o usuário estiver fora do Instagram, o bloqueio começa na próxima entrada.
 
 Não existe botão de pausa manual. A sobreposição é retirada quando o período bloqueado termina ou quando o usuário sai do Instagram pela navegação do Android.
 

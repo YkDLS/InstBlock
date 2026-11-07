@@ -45,7 +45,9 @@ Registre a versão do Android, o modelo, a versão do app e o commit testado. Os
 | Acumular tentativas até o limite | Tempo restante não supera três horas; o contador continua aumentando. |
 | Deixar o cronômetro chegar a zero | A sobreposição fecha e começa uma liberação de dez minutos corridos. |
 | Abrir o Instagram durante a liberação | O acesso é permitido e não registra outra tentativa. |
-| Aguardar dez minutos de liberação | O painel volta ao estado pronto; a próxima entrada inicia cinco minutos de bloqueio. |
+| Deixar o Instagram aberto até o fim dos dez minutos de liberação | A sobreposição reaparece em até um segundo, registra uma tentativa e inicia cinco minutos de bloqueio sem exigir sair e entrar novamente. |
+| Terminar a liberação fora do Instagram | O painel volta ao estado pronto; a próxima entrada inicia cinco minutos de bloqueio. |
+| Terminar a liberação com a tela apagada ou bloqueada | A sobreposição não aparece sobre a tela bloqueada; se o Instagram ainda estiver aberto ao desbloquear, o bloqueio começa então. |
 | Alterar a hora do aparelho durante o bloqueio | O tempo restante não diminui nem aumenta por causa da hora civil. |
 | Apagar a tela sem desligar o aparelho | O relógio interno continua avançando e a espera continua normalmente. |
 | Reiniciar durante o bloqueio | O restante salvo volta após o boot e nunca fica menor por causa do reinício. |
