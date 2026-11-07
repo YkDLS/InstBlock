@@ -14,12 +14,13 @@ import com.example.instagramblocker.R
 import java.util.Locale
 
 /** Janela de bloqueio exibida somente enquanto o Instagram está em primeiro plano. */
-class BlockOverlayView(context: Context, onGoHome: () -> Unit) : FrameLayout(context) {
+class BlockOverlayView(context: Context, message: String, onGoHome: () -> Unit) : FrameLayout(context) {
     private val ink = Color.rgb(38, 32, 68)
     private val muted = Color.rgb(105, 100, 132)
     private val violet = Color.rgb(101, 85, 217)
     private val timer = label("00:00:00", 43f, Color.WHITE, Typeface.BOLD)
     private val attempt = label("", 13f, muted)
+    private val motivation = label(message, 16f, muted)
 
     init {
         isClickable = true
@@ -38,11 +39,11 @@ class BlockOverlayView(context: Context, onGoHome: () -> Unit) : FrameLayout(con
 
         content.addView(label("✦  INSTBLOCK", 13f, violet, Typeface.BOLD))
         content.addView(space(36))
-        content.addView(label("Um respiro antes\ndo feed.", 36f, ink, Typeface.BOLD).apply {
+        content.addView(label("Um respiro antes\ndo feed", 36f, ink, Typeface.BOLD).apply {
             letterSpacing = -0.03f
         })
         content.addView(space(12))
-        content.addView(label("O Instagram pode esperar. Este tempo é seu.", 16f, muted))
+        content.addView(motivation)
         content.addView(space(30))
 
         val focusCard = LinearLayout(context).apply {
@@ -61,7 +62,7 @@ class BlockOverlayView(context: Context, onGoHome: () -> Unit) : FrameLayout(con
         focusCard.addView(space(5))
         focusCard.addView(timer)
         focusCard.addView(space(14))
-        focusCard.addView(label("Cada nova entrada soma 5 minutos de foco.", 14f, Color.WHITE).apply { alpha = 0.9f })
+        focusCard.addView(label("Cada nova entrada soma 5 minutos de foco", 14f, Color.WHITE).apply { alpha = 0.9f })
 
         content.addView(space(25))
         val note = LinearLayout(context).apply {
@@ -77,7 +78,7 @@ class BlockOverlayView(context: Context, onGoHome: () -> Unit) : FrameLayout(con
         note.addView(attempt)
 
         content.addView(space(24))
-        content.addView(label("A contagem continua mesmo se você fechar esta tela.", 13f, muted).apply {
+        content.addView(label("A contagem continua mesmo se você fechar esta tela", 13f, muted).apply {
             gravity = Gravity.CENTER
         })
         content.addView(space(16))

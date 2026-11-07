@@ -36,6 +36,7 @@ Registre a versão do Android, o modelo, a versão do app e o commit testado. Os
 | Conceder as duas permissões e voltar ao painel | O painel mostra proteção ativa e o monitor inicia em primeiro plano. |
 | Negar notificações | O bloqueio continua funcionando; apenas cronômetro e avisos do sistema ficam ocultos. |
 | Primeira entrada no Instagram | Mostra a sobreposição de bloqueio, registra uma tentativa e aproximadamente cinco minutos. |
+| Abrir o Instagram em entradas sucessivas | A mensagem motivadora é sorteada a cada entrada, permanece estável durante a contagem e não se repete na entrada imediatamente seguinte. |
 | Nova entrada após voltar ao launcher | Registra mais uma tentativa e soma cinco minutos ao tempo restante. |
 | Eventos repetidos da mesma entrada | Não multiplica a contagem para uma única entrada. |
 | Sair do Instagram pela navegação do Android | A sobreposição desaparece quando outro app entra em primeiro plano. |
