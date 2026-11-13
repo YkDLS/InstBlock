@@ -127,9 +127,9 @@ if (phoneVisual && mainContent && numbersSection) {
   const chapters = document.createElement("div");
   chapters.className = "phone-story__chapters";
   const storyCopy = [
-    ["home", "01 / Perceba o impulso", "Um intervalo entre você e o feed.", "Toque no Instagram dentro do telefone para ver a demonstração. O InstBlock detecta a abertura do aplicativo oficial."],
-    ["instagram", "02 / Interrompa o automático", "O impulso não precisa virar rolagem.", "Uma tentativa distinta é registrada e o bloqueio entra em ação, sem ler o conteúdo da tela."],
-    ["blocked", "03 / Deixe o ciclo agir", "Seu tempo de foco, protegido.", "A espera usa o tempo interno do Android. Ao zerar, uma notificação avisa e libera dez minutos; depois, a proteção volta sozinha."],
+    ["home", "01 / Perceba o impulso", "Um intervalo entre você e o feed", "Toque no Instagram dentro do telefone para ver a demonstração. O InstBlock detecta a abertura do aplicativo oficial."],
+    ["instagram", "02 / Interrompa o automático", "O impulso não precisa virar rolagem", "Uma tentativa distinta é registrada e o bloqueio entra em ação, sem ler o conteúdo da tela."],
+    ["blocked", "03 / Deixe o ciclo agir", "Seu tempo de foco, protegido", "A espera usa o tempo interno do Android. Ao zerar, uma notificação avisa e libera dez minutos; depois, a proteção volta sozinha."],
   ];
   storyCopy.forEach(([scene, eyebrow, title, description], index) => {
     const chapter = document.createElement("article");
@@ -165,7 +165,3 @@ if (phoneVisual && mainContent && numbersSection) {
     chaptersInStory.forEach((chapter) => storyObserver.observe(chapter));
   }
 }
-
-document.querySelectorAll("h1,h2,h3,h4,h5,h6").forEach((heading) => {
-  heading.textContent = heading.textContent.replace(/[.]+\s*$/, "");
-});

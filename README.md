@@ -97,6 +97,14 @@ Abra `http://127.0.0.1:4173`. A demonstração do telefone é composta por HTML 
 
 O workflow `Deploy landing page` publica `landing-page/dist/` no GitHub Pages quando há alterações nessa pasta na branch `main`. O endereço público é exibido na configuração Pages do repositório após a primeira execução bem-sucedida.
 
+O logo exibido no cabeçalho, no rodapé e no mockup é `landing-page/dist/favicon.png`, versão reduzida de `Images/img_instblock.png`. A paleta segue as cores do tema do app (`ui/theme/Theme.kt`): violeta `#6555D9`, teal `#00A896` e coral `#FF8A65`, sobre um fundo escuro contínuo.
+
+A página também pode ser publicada na Vercel. O arquivo `vercel.json` na raiz serve `landing-page/dist/` sem etapa de build e envia os mesmos cabeçalhos de segurança do servidor local. No GitHub Pages, que não permite cabeçalhos próprios, a Content-Security-Policy vem de uma tag `<meta>` em `index.html`. Para publicar pela CLI, execute na raiz do repositório:
+
+```powershell
+vercel --prod
+```
+
 O workflow [Security audit](https://github.com/YkDLS/InstBlock/actions/workflows/security.yml) executa testes, lint, análise CodeQL e verificações do manifesto/dependências. O Dependabot monitora Gradle e GitHub Actions. Consulte [docs/security-testing.md](docs/security-testing.md) para o escopo e limites.
 
 ## Organização do projeto
