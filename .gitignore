@@ -10,3 +10,5 @@ local.properties
 *.iml
 *.apk
 
+
+.vercel
